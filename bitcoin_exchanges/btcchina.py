@@ -1,6 +1,3 @@
-"""
-Copyright Coinapult 2013
-"""
 from moneyed.classes import Money, MultiMoney
 from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker
 

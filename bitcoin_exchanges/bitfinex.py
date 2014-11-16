@@ -133,8 +133,6 @@ class Bitfinex(ExchangeABC):
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_order_book' % (type(e), str(e)))
 
-    get_depth = get_order_book
-
     def get_ticker(self, pair='btcusd'):
         try:
             try:
