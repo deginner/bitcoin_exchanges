@@ -1,4 +1,4 @@
-### Bitcoin Exchange Clients
+# Bitcoin Exchange Clients
 ===============
 
 Clients for managing your Bitcoin exchange accounts. For use in high volume trading by a control application.
@@ -21,7 +21,7 @@ python setup.py install
 ## Configuration
 To configure the exchange credentials, copy and paste each exchange's API keys in exchange_config.py.
 
-#Nonce Database
+### Nonce Database
 Next, create a mongo collection for tracking nonce's, and save the connected collection object to
 exchange_config.nonceDB.
 
@@ -36,7 +36,7 @@ from pymongo import Connection
 nonceDB = Connection().nonce_database['nonce']
 ```
 
-#Storing configuration file
+### Storing configuration file
 Finally move the file to a safe directory and give it read only permissions. Finally, export the directory path to the
 environmental variable BITCOIN_EXCHANGE_CONFIG_DIR.
 
