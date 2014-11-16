@@ -51,7 +51,7 @@ export BITCOIN_EXCHANGE_CONFIG_DIR="/etc/exchanges/"
 ```
 
 ## Usage
-For examples, see [test/client.py](https://github.com/coinapult/bitcoin_exchanges/blob/master/test/client.py).
+For examples, see [test/client.py](https://github.com/coinapult/bitcoin_exchanges/blob/master/test/clients.py).
 Basically, if you have everything configured correctly, you can do stuff like this:
 
 ```python
@@ -63,7 +63,7 @@ for exch in EXCHANGE:
     balance = EXCHANGE[exch].get_balance()
     print "%s balance is currently %r" % (exch, balance)
     if balance.getMoneys('USD') > 1000:
-        # Cheap bitcoins! Warning, this will market buy bitcoins :D
+        # Cheap bitcoins! Warning, this will market buy bitcoins on every live exchange :D
         # EXCHANGE[exch].create_order(amount=1, price'1000', otype='bid')
         print "toilet paper"
 ```
