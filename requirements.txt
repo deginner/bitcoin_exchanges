@@ -1,0 +1,5 @@
+requests
+pymongo
+hashlib
+
+git+https://github.com/bearbones/py-moneyed/
