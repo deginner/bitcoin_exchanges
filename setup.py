@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name='bitcoin_exchanges',
     version='0.0.1',
-    packages=['bitcoin_exchanges'],
+    packages=['bitcoin_exchanges', 'bitcoin_exchanges.old'],
     url='',
     license='GPLv3',
     author='coinapult',
