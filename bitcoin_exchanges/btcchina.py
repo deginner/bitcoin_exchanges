@@ -4,7 +4,7 @@ Copyright Coinapult 2013
 from moneyed.classes import Money, MultiMoney
 from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker
 
-from coinapult_common.partners import btcchina  # todo remove
+from lib import btcchina
 
 fee = 0
 btcny = btcchina.BTCChina(access=exchange_config['btcchina']['api_keys']['key'],
