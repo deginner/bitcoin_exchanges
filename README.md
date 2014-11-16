@@ -37,8 +37,9 @@ nonceDB = Connection().nonce_database['nonce']
 ```
 
 ### Storing configuration file
-Finally move the file to a safe directory and give it read only permissions. Finally, export the directory path to the
-environmental variable BITCOIN_EXCHANGE_CONFIG_DIR.
+Move the file to a safe directory and give it read only permissions. Export the directory path to the
+environmental variable BITCOIN_EXCHANGE_CONFIG_DIR. You may have to repeat this each session. Use permanent settings like
+.bashrc, .bash_profile, .profile or similar.
 
 Example commands in linux:
 
