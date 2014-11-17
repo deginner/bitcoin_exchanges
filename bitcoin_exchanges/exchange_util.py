@@ -175,6 +175,6 @@ def create_ticker(bid=0, ask=0, high=0, low=0, volume=0, last=0, timestamp=0,
 def get_live_exchange_workers():
     exchanges = {}
     for exch in exchange_config:
-        if exchange_config[exch]['live']:
+        if exch != 'UFX' and exchange_config[exch]['live']:
             exchanges[exch] = importlib.import_module('bitcoin_exchanges.%s' % exch)
     return exchanges

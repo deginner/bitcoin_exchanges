@@ -4,8 +4,8 @@ from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ti
 from old import btcchina
 
 fee = 0
-btcny = btcchina.BTCChina(access=exchange_config['btcchina']['api_keys']['key'],
-                          secret=exchange_config['btcchina']['api_keys']['secret'])
+btcny = btcchina.BTCChina(access=exchange_config['btcchina']['api_creds']['key'],
+                          secret=exchange_config['btcchina']['api_creds']['secret'])
 
 
 class BTCChina(ExchangeABC):

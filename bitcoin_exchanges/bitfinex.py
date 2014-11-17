@@ -63,7 +63,7 @@ class Bitfinex(ExchangeABC):
 
     def cancel_orders(self, **kwargs):
         resp = self.bitfinex_request('/v1/order/cancel/all')
-        if resp.text == "All orders cancelled":
+        if "All orders cancelled" in resp.text:
             return True
         else:
             return False
@@ -168,5 +168,5 @@ class Bitfinex(ExchangeABC):
                 type(e), str(e), str(order_id)))
 
 
-exchange = Bitfinex(exchange_config['bitfinex']['api_keys']['key'],
-                    exchange_config['bitfinex']['api_keys']['secret'])
+exchange = Bitfinex(exchange_config['bitfinex']['api_creds']['key'],
+                    exchange_config['bitfinex']['api_creds']['secret'])

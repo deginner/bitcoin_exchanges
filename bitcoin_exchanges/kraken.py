@@ -207,5 +207,5 @@ class Kraken(ExchangeABC):
         return self.submit_request('QueryTrades', {'trades': 'True', 'txid': list_of_txids})
 
 
-exchange = Kraken(key=exchange_config['kraken']['api_keys']['key'],
-                  secret=exchange_config['kraken']['api_keys']['secret'])
+exchange = Kraken(key=exchange_config['kraken']['api_creds']['key'],
+                  secret=exchange_config['kraken']['api_creds']['secret'])

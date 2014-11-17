@@ -242,4 +242,4 @@ class BTCE(ExchangeABC):
         return self._handle_response(self.send_btce(params))
 
 
-exchange = BTCE(key=exchange_config['btce']['api_keys']['key'], secret=exchange_config['btce']['api_keys']['secret'])
+exchange = BTCE(key=exchange_config['btce']['api_creds']['key'], secret=exchange_config['btce']['api_creds']['secret'])

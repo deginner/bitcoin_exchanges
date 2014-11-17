@@ -192,6 +192,6 @@ class Bitstamp(ExchangeABC):
         return json.loads(self.submit_request('user_transactions', {}, True, timedelta))
 
 
-exchange = Bitstamp(exchange_config['bitstamp']['api_keys']['key'],
-                    exchange_config['bitstamp']['api_keys']['secret'],
-                    exchange_config['bitstamp']['api_keys']['clientid'])
+exchange = Bitstamp(exchange_config['bitstamp']['api_creds']['key'],
+                    exchange_config['bitstamp']['api_creds']['secret'],
+                    exchange_config['bitstamp']['api_creds']['clientid'])
