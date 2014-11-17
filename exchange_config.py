@@ -1,3 +1,5 @@
+BLOCK_ORDERS = False  # If True, then orders will not be submitted to exchanges
+
 # if live == True for an exchange, it will be used, and is available using get_live_exchange_workers
 exchange_config = {
     'btcchina': {

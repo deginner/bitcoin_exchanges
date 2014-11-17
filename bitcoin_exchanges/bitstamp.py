@@ -104,6 +104,8 @@ class Bitstamp(ExchangeABC):
         return True
 
     def create_order(self, amount, price, otype):
+        if exchange_config['BLOCK_ORDERS']:
+            return "order blocked"
         if otype == 'ask':
             otype = 'sell'
         elif otype == 'bid':

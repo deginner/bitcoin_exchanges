@@ -69,7 +69,8 @@ class Bitfinex(ExchangeABC):
             return False
 
     def create_order(self, amount, price, otype, typ='exchange limit', bfxexch='all'):
-
+        if exchange_config['BLOCK_ORDERS']:
+            return "order blocked"
         if otype == 'bid':
             otype = 'buy'
         elif otype == 'ask':

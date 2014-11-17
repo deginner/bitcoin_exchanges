@@ -129,6 +129,8 @@ class BTCE(ExchangeABC):
             rate          The rate to buy/sell                          numerical
             amount        The amount which is necessary to buy/sell     numerical
         """
+        if exchange_config['BLOCK_ORDERS']:
+            return "order blocked"
         if otype == 'bid':
             otype = 'buy'
         elif otype == 'ask':

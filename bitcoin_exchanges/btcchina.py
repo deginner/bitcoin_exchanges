@@ -26,6 +26,8 @@ class BTCChina(ExchangeABC):
         return True
 
     def create_order(self, amount, price=0, otype='bid'):
+        if exchange_config['BLOCK_ORDERS']:
+            return "order blocked"
         if isinstance(amount, Money):
             famount = round(float(amount.amount), 2)
         else:

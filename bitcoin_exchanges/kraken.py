@@ -119,6 +119,8 @@ class Kraken(ExchangeABC):
         return success
 
     def create_order(self, amount, price, otype, pair='XXBTZEUR', **kwargs):
+        if exchange_config['BLOCK_ORDERS']:
+            return "order blocked"
         otype = 'buy' if otype == 'bid' else 'sell'
         if not isinstance(amount, str):
             amount = str(amount)
