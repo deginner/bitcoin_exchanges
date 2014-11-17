@@ -6,11 +6,11 @@ Differences in formatting and performance have been evened out using the tools i
 
 Currently supported exchanges are:
 
-+ Bitfinex
-+ BTCChina
-+ BTC-E
-+ Kraken
-+ Bitstamp
++ [Bitfinex](https://www.bitfinex.com/?refcode=xknTcTvLS2)
++ [BTCChina](https://btcchina.com)
++ [BTC-E](https://btc-e.com)
++ [Kraken](https://www.kraken.com/)
++ [Bitstamp](https://bitstamp.net)
 
 ## Installation
 run
@@ -51,7 +51,7 @@ export BITCOIN_EXCHANGE_CONFIG_DIR="/etc/exchanges/"
 ```
 
 ## Usage
-For examples, see [test/client.py](https://github.com/coinapult/bitcoin_exchanges/blob/master/test/clients.py).
+For detailed examples, see [test/clients.py](https://github.com/coinapult/bitcoin_exchanges/blob/master/test/clients.py).
 Basically, if you have everything configured correctly, you can do stuff like this:
 
 ```python
