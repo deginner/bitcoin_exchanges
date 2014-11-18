@@ -176,5 +176,5 @@ def get_live_exchange_workers():
     exchanges = {}
     for exch in exchange_config:
         if exch != 'UFX' and exchange_config[exch]['live']:
-            exchanges[exch] = importlib.import_module('bitcoin_exchanges.%s' % exch)
+            exchanges[exch] = importlib.import_module('bitcoin_exchanges.%s' % exch).exchange
     return exchanges
