@@ -7,7 +7,7 @@ import requests
 import urllib
 from moneyed import MultiMoney, Money
 
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS
 
 import time
 
@@ -119,7 +119,7 @@ class Kraken(ExchangeABC):
         return success
 
     def create_order(self, amount, price, otype, pair='XXBTZEUR', **kwargs):
-        if exchange_config['BLOCK_ORDERS']:
+        if BLOCK_ORDERS:
             return "order blocked"
         otype = 'buy' if otype == 'bid' else 'sell'
         if not isinstance(amount, str):

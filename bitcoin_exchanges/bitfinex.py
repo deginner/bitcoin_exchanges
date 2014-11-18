@@ -7,7 +7,7 @@ from base64 import b64encode
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS
 
 
 BASE_URL = 'https://api.bitfinex.com'
@@ -69,7 +69,7 @@ class Bitfinex(ExchangeABC):
             return False
 
     def create_order(self, amount, price, otype, typ='exchange limit', bfxexch='all'):
-        if exchange_config['BLOCK_ORDERS']:
+        if BLOCK_ORDERS:
             return "order blocked"
         if otype == 'bid':
             otype = 'buy'

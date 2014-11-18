@@ -12,7 +12,7 @@ from pymongo.errors import DuplicateKeyError
 config_dir = os.path.dirname(os.environ.get('BITCOIN_EXCHANGE_CONFIG_DIR', '.'))
 if config_dir not in sys.path:
     sys.path.append(config_dir)
-from exchange_config import exchange_config, nonceDB
+from exchange_config import exchange_config, nonceDB, BLOCK_ORDERS
 
 OrderbookItem = namedtuple('OrderbookItem', 'price amount')
 

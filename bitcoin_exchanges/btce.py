@@ -8,7 +8,8 @@ import urllib
 
 from moneyed.classes import Money, MultiMoney
 
-from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB
+from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB,\
+    BLOCK_ORDERS
 
 
 REQ_TIMEOUT = 10  # seconds
@@ -129,7 +130,7 @@ class BTCE(ExchangeABC):
             rate          The rate to buy/sell                          numerical
             amount        The amount which is necessary to buy/sell     numerical
         """
-        if exchange_config['BLOCK_ORDERS']:
+        if BLOCK_ORDERS:
             return "order blocked"
         if otype == 'bid':
             otype = 'buy'
@@ -181,7 +182,7 @@ class BTCE(ExchangeABC):
                     bal += Money(amount=Decimal(olist[oNum]['amount']))
         return bal
 
-    def get_depth(self):
+    def get_depth(self, pair='ignored'):
         response = self.papi('depth')
         return json.loads(response)
 

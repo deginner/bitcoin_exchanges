@@ -1,5 +1,5 @@
 from moneyed.classes import Money, MultiMoney
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS
 
 from old import btcchina
 
@@ -26,7 +26,7 @@ class BTCChina(ExchangeABC):
         return True
 
     def create_order(self, amount, price=0, otype='bid'):
-        if exchange_config['BLOCK_ORDERS']:
+        if BLOCK_ORDERS:
             return "order blocked"
         if isinstance(amount, Money):
             famount = round(float(amount.amount), 2)
@@ -84,7 +84,7 @@ class BTCChina(ExchangeABC):
         else:
             return total, available
 
-    def get_depth(self):
+    def get_depth(self, pair='ignored'):
         return btcny.get_market_depth()
 
     def get_open_orders(self):

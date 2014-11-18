@@ -4,7 +4,7 @@ import json
 import time
 import requests
 from moneyed.classes import Money, MultiMoney
-from bitcoin_exchanges.exchange_util import ExchangeABC, ExchangeError, exchange_config, create_ticker
+from bitcoin_exchanges.exchange_util import ExchangeABC, ExchangeError, exchange_config, create_ticker, BLOCK_ORDERS
 
 
 baseUrl = "https://www.bitstamp.net/api/"
@@ -96,7 +96,6 @@ class Bitstamp(ExchangeABC):
         """
         orders = self.get_open_orders()
         for order in orders:
-            print order
             if (typ == 'all' or
                     (typ == 'ask' and order['type'] == 1) or
                     (typ == 'bid' and order['type'] == 0)):
@@ -104,7 +103,7 @@ class Bitstamp(ExchangeABC):
         return True
 
     def create_order(self, amount, price, otype):
-        if exchange_config['BLOCK_ORDERS']:
+        if BLOCK_ORDERS:
             return "order blocked"
         if otype == 'ask':
             otype = 'sell'
@@ -116,7 +115,6 @@ class Bitstamp(ExchangeABC):
         data = {'amount': round(float(amount), 2),
                 'price': round(price, 2)}
         response = json.loads(self.submit_request(otype, data, True))
-        print response
         return response
 
     def get_balance(self, btype='total'):
