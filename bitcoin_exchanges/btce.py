@@ -243,6 +243,8 @@ class BTCE(ExchangeABC):
         params = {"method": "TradeHistory", 'count': 999999999999999}
         return self._handle_response(self.send_btce(params))
 
+    def get_deposit_address(self):
+        return exchange_config['btce']['address']
 
 eclass = BTCE
 exchange = BTCE(key=exchange_config['btce']['api_creds']['key'], secret=exchange_config['btce']['api_creds']['secret'])

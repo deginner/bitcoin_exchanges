@@ -170,6 +170,17 @@ class Bitfinex(ExchangeABC):
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_order_status for %s' % (
                 type(e), str(e), str(order_id)))
 
+    def get_deposit_address(self):
+        try:
+            result = self.bitfinex_request('/v1/deposit/new', {'currency': 'BTC', 'method': 'bitcoin',
+                                                             'wallet_name': 'exchange'}).json()
+            if result['result'] == 'success' and 'address' in result:
+                return result['address']
+            else:
+                raise ExchangeError('bitfinex', result)
+        except ValueError as e:
+            raise ExchangeError('bitfinex', '%s %s while sending get_deposit_address' % (type(e), str(e)))
+
 
 eclass = Bitfinex
 exchange = Bitfinex(exchange_config['bitfinex']['api_creds']['key'],

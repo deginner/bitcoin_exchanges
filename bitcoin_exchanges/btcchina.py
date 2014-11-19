@@ -108,6 +108,10 @@ class BTCChina(ExchangeABC):
     def get_usd_ticker(cls):
         return btcny.getUSDTicker()
 
+    def get_deposit_address(self):
+        ainfo = self.account_info()
+        return ainfo['profile']['btc_deposit_address']
+
 
 eclass = BTCChina
 exchange = BTCChina()

@@ -95,6 +95,16 @@ class TestAPI(unittest.TestCase):
                 self.assertIsInstance(item[0], Decimal)
                 self.assertIsInstance(item[1], Decimal)
 
+    def test_deposit_address(self):
+        for name, mod in EXCHANGE.iteritems():
+            if name == 'btce':
+                continue  # btce doesn't support this feature
+            print "test_deposit_address %s" % name
+            addy = mod.exchange.get_deposit_address()
+            self.assertIsInstance(addy, str)
+            self.assertIn(addy[0], (1, 3))
+            # todo real address hash check
+
 
 if __name__ == "__main__":
     unittest.main()

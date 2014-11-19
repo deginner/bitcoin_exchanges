@@ -16,7 +16,8 @@ exchange_config = {
     },
     'btce': {
         'live': True,
-        'api_creds': {'key': '', 'secret': ''}
+        'api_creds': {'key': '', 'secret': ''},
+        'address': ''  # a deposit address from your btc-e account
     },
     'kraken': {
         'live': True,

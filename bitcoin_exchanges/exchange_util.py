@@ -129,6 +129,12 @@ class ExchangeABC:
         :return: a list of transactions, possibly only a subset of them."""
         pass
 
+    @abc.abstractmethod
+    def get_deposit_address(self):
+        """
+        :return: a bitcoin address for making deposits to your account."""
+        pass
+
     def next_nonce(self):
         """Atomically increment and get a nonce for an exchange."""
         entry = self.nonceDB.find_and_modify({'exchange': self.name}, {'$inc': {'seq': 1}}, new=True)

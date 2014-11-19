@@ -195,6 +195,8 @@ class Bitstamp(ExchangeABC):
         """
         return json.loads(self.submit_request('user_transactions', {}, True, timedelta))
 
+    def get_deposit_address(self):
+        return json.loads(self.submit_request('bitcoin_deposit_address', {}, True))
 
 eclass = Bitstamp
 exchange = Bitstamp(exchange_config['bitstamp']['api_creds']['key'],

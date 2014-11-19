@@ -219,6 +219,17 @@ class Kraken(ExchangeABC):
         list_of_txids = list_of_txids or []
         return self.submit_private_request('QueryTrades', {'trades': 'True', 'txid': list_of_txids})
 
+    def get_deposit_methods(self):
+        return self.submit_private_request('DepositMethods', {'asset': 'BTC'})
+
+    def get_deposit_address(self):
+        addys = self.submit_private_request('DepositAddresses', {'asset': 'BTC', 'method': 'Bitcoin'})
+        if len(addys['error']) > 0:
+            raise ExchangeError('kraken', addys['error'])
+        for addy in addys['result']:
+            if int(addy['expiretm']) < time.time() + 1440:
+                return addy['address']
+        raise ExchangeError('kraken', "unable to get deposit address")
 
 eclass = Kraken
 exchange = Kraken(key=exchange_config['kraken']['api_creds']['key'],
