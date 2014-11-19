@@ -60,10 +60,10 @@ from bitcoin_exchanges.exchange_util import get_live_exchange_workers
 EXCHANGE = get_live_exchange_workers()
 
 for exch in EXCHANGE:
-    balance = EXCHANGE[exch].get_balance()
+    balance = EXCHANGE[exch].exchange.get_balance()
     print "%s balance is currently %r" % (exch, balance)
     if balance.getMoneys('USD') > 1000:
         # Cheap bitcoins! Warning, this will market buy bitcoins on every live exchange :D
-        # EXCHANGE[exch].create_order(amount=1, price'1000', otype='bid')
+        # EXCHANGE[exch].exchange.create_order(amount=1, price=1000, otype='bid')
         print "toilet paper"
 ```
