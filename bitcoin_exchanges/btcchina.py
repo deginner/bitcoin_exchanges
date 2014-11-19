@@ -110,7 +110,7 @@ class BTCChina(ExchangeABC):
 
     def get_deposit_address(self):
         ainfo = self.account_info()
-        return ainfo['profile']['btc_deposit_address']
+        return str(ainfo['profile']['btc_deposit_address'])
 
 
 eclass = BTCChina

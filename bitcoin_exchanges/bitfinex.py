@@ -175,7 +175,7 @@ class Bitfinex(ExchangeABC):
             result = self.bitfinex_request('/v1/deposit/new', {'currency': 'BTC', 'method': 'bitcoin',
                                                              'wallet_name': 'exchange'}).json()
             if result['result'] == 'success' and 'address' in result:
-                return result['address']
+                return str(result['address'])
             else:
                 raise ExchangeError('bitfinex', result)
         except ValueError as e:

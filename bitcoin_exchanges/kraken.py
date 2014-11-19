@@ -228,7 +228,7 @@ class Kraken(ExchangeABC):
             raise ExchangeError('kraken', addys['error'])
         for addy in addys['result']:
             if int(addy['expiretm']) < time.time() + 1440:
-                return addy['address']
+                return str(addy['address'])
         raise ExchangeError('kraken', "unable to get deposit address")
 
 eclass = Kraken

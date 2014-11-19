@@ -102,7 +102,7 @@ class TestAPI(unittest.TestCase):
             print "test_deposit_address %s" % name
             addy = mod.exchange.get_deposit_address()
             self.assertIsInstance(addy, str)
-            self.assertIn(addy[0], (1, 3))
+            self.assertIn(addy[0], '13')
             # todo real address hash check
 
 
