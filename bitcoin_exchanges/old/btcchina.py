@@ -14,6 +14,7 @@ import base64
 import json
 from decimal import Decimal
 import requests
+from requests.exceptions import Timeout, ConnectionError
 from bitcoin_exchanges.exchange_util import ExchangeError
 
 
@@ -21,11 +22,11 @@ REQ_TIMEOUT = 10  # seconds
 
 
 class BTCChina():
-    def __init__(self, access=None, secret=None, normalizationRate=Decimal(1 / 6.1 * 0.975)):
+    def __init__(self, access=None, secret=None, normalization_rate=Decimal(1 / 6.1 * 0.975)):
         self.access_key = access
         self.secret_key = secret
         self.url = "https://api.btcchina.com"
-        self.normalizationRate = normalizationRate
+        self.normalization_rate = normalization_rate
 
     def _get_tonce(self):
         return int(time.time() * 1000000)
@@ -75,7 +76,7 @@ class BTCChina():
         try:
             response = requests.post(self.url + '/api_trade_v1.php', data=json.dumps(post_data), headers=headers,
                                      verify=False, timeout=REQ_TIMEOUT)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        except (ConnectionError, Timeout) as e:
             raise ExchangeError('btcchina', 'Could not complete request %r for reason %s' % (post_data, e))
 
         # check response code, ID, and existence of 'result' or 'error'
@@ -113,9 +114,8 @@ class BTCChina():
         try:
             depth = requests.get('https://data.btcchina.com/data/orderbook')
             return depth.json()
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-            raise ExchangeError('btcchina', 'Could not get_market_depth for reason %s' % (post_data, e))
-        raise ExchangeError('btcchina', 'Could not get_market_depth for reason %s' % (post_data, e))
+        except (ConnectionError, Timeout, ValueError) as e:
+            raise ExchangeError('btcchina', 'Could not get_market_depth using data %s for reason %s' % (post_data, e))
 
     def buy(self, price, amount, post_data=None):
         if not post_data:
@@ -155,11 +155,11 @@ class BTCChina():
             post_data['params'] = [currency, 'false']
         return self._private_request(post_data)
 
-    def get_orders(self, id=None, open_only=True, post_data=None):
+    def get_orders(self, oid=None, open_only=True, post_data=None):
         # this combines getOrder and getOrders
         if not post_data:
             post_data = {}
-        if id is None:
+        if oid is None:
             post_data['method'] = 'getOrders'
             if open_only:
                 post_data['params'] = []
@@ -167,7 +167,7 @@ class BTCChina():
                 post_data['params'] = ['false']
         else:
             post_data['method'] = 'getOrder'
-            post_data['params'] = [id]
+            post_data['params'] = [oid]
         return self._private_request(post_data)
 
     def cancel_all_orders(self):
@@ -175,45 +175,45 @@ class BTCChina():
         for order in orders['order']:
             self.cancel(order_id=order['id'])
 
-    def get_withdrawals(self, id='BTC', pending=True, post_data=None):
+    def get_withdrawals(self, wid='BTC', pending=True, post_data=None):
         # this combines getWithdrawal and getWithdrawls
         if not post_data:
             post_data = {}
         try:
-            id = int(id)
+            wid = int(wid)
             post_data['method'] = 'getWithdrawal'
-            post_data['params'] = [id]
+            post_data['params'] = [wid]
         except:
             post_data['method'] = 'getWithdrawals'
             if pending:
-                post_data['params'] = [id]
+                post_data['params'] = [wid]
             else:
-                post_data['params'] = [id, 'false']
+                post_data['params'] = [wid, 'false']
         return self._private_request(post_data)
 
-    def getTicker(self, retry=0):
+    def get_ticker(self, retry=0):
         try:
             resp = requests.get('https://data.btcchina.com/data/ticker', verify=False,
                                 timeout=REQ_TIMEOUT)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-            raise ExchangeError('btcchina', 'Could not getTicker for reason %s' % e)
+        except (ConnectionError, Timeout) as e:
+            raise ExchangeError('btcchina', 'Could not get_ticker for reason %s' % e)
         try:
             return json.loads(resp.text)
         except ValueError:
             if retry < 5:
-                self.getTicker(retry=retry + 1)
+                self.get_ticker(retry=retry + 1)
 
-    def getUSDTicker(self):
-        CNYTicker = self.getTicker()
-        if 'ticker' in CNYTicker:
-            USDTicker = {'ticker': {}}
-            USDTicker['ticker']['sell'] = Decimal(CNYTicker['ticker']['sell']) * self.normalizationRate
-            USDTicker['ticker']['buy'] = Decimal(CNYTicker['ticker']['buy']) * self.normalizationRate
-            USDTicker['ticker']['last'] = Decimal(CNYTicker['ticker']['last']) * self.normalizationRate
-            USDTicker['ticker']['high'] = Decimal(CNYTicker['ticker']['high']) * self.normalizationRate
-            USDTicker['ticker']['low'] = Decimal(CNYTicker['ticker']['low']) * self.normalizationRate
-            USDTicker['ticker']['vol'] = CNYTicker['ticker']['vol']
-            return USDTicker
+    def get_usd_ticker(self):
+        cnyticker = self.get_ticker()
+        if 'ticker' in cnyticker:
+            usdticker = {'ticker': {}}
+            usdticker['ticker']['sell'] = Decimal(cnyticker['ticker']['sell']) * self.normalization_rate
+            usdticker['ticker']['buy'] = Decimal(cnyticker['ticker']['buy']) * self.normalization_rate
+            usdticker['ticker']['last'] = Decimal(cnyticker['ticker']['last']) * self.normalization_rate
+            usdticker['ticker']['high'] = Decimal(cnyticker['ticker']['high']) * self.normalization_rate
+            usdticker['ticker']['low'] = Decimal(cnyticker['ticker']['low']) * self.normalization_rate
+            usdticker['ticker']['vol'] = cnyticker['ticker']['vol']
+            return usdticker
 
     def get_transactions(self, limit=None, ttype='all', offset=0):
         limit = 10 if limit is None else 0

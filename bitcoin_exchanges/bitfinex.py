@@ -2,6 +2,7 @@ import hmac
 import json
 import time
 import requests
+from requests.exceptions import Timeout, ConnectionError
 from hashlib import sha384
 from base64 import b64encode
 
@@ -44,7 +45,7 @@ class Bitfinex(ExchangeABC):
                                          timeout=REQ_TIMEOUT)
                 if "Nonce is too small." in response:
                     response = None
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            except (ConnectionError, Timeout) as e:
                 raise ExchangeError('bitfinex', '%s %s while sending to bitfinex %r' % (type(e), str(e), params))
         return response
 
@@ -95,10 +96,12 @@ class Bitfinex(ExchangeABC):
             return str(order['order_id'])
         raise ExchangeError('bitfinex', 'unable to create order %r response was %r' % (params, order))
 
-    def format_book_item(self, item):
-        return super(Bitfinex, self).format_book_item((item['price'], item['amount']))
+    @classmethod
+    def format_book_item(cls, item):
+        return super(Bitfinex, cls).format_book_item((item['price'], item['amount']))
 
-    def unformat_book_item(self, item):
+    @classmethod
+    def unformat_book_item(cls, item):
         return {'price': str(item[0]), 'amount': str(item[1])}
 
     def get_balance(self, btype='total'):
@@ -127,25 +130,24 @@ class Bitfinex(ExchangeABC):
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_open_orders' % (type(e), str(e)))
 
-    def get_order_book(self, pair='btcusd', **kwargs):
+    @classmethod
+    def get_order_book(cls, pair='btcusd', **kwargs):
         try:
             return requests.get('%s/v1/book/%s' % (BASE_URL, pair),
                                 timeout=REQ_TIMEOUT).json()
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_order_book' % (type(e), str(e)))
 
-    def get_ticker(self, pair='btcusd'):
+    @classmethod
+    def get_ticker(cls, pair='btcusd'):
         try:
-            try:
-                rawtick = requests.get(BASE_URL + '/v1/pubticker/%s' % pair, timeout=REQ_TIMEOUT).json()
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                raise ExchangeError('bitfinex', '%s %s while sending get_ticker to bitfinex' % (type(e), str(e)))
+            rawtick = requests.get(BASE_URL + '/v1/pubticker/%s' % pair, timeout=REQ_TIMEOUT).json()
+        except (ConnectionError, Timeout, ValueError) as e:
+            raise ExchangeError('bitfinex', '%s %s while sending get_ticker to bitfinex' % (type(e), str(e)))
 
-            return create_ticker(bid=rawtick['bid'], ask=rawtick['ask'], high=rawtick['high'], low=rawtick['low'],
-                                 volume=rawtick['volume'], last=rawtick['last_price'], timestamp=rawtick['timestamp'],
-                                 currency='USD')
-        except ValueError as e:
-            raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_ticker' % (type(e), str(e)))
+        return create_ticker(bid=rawtick['bid'], ask=rawtick['ask'], high=rawtick['high'], low=rawtick['low'],
+                             volume=rawtick['volume'], last=rawtick['last_price'], timestamp=rawtick['timestamp'],
+                             currency='USD')
 
     def get_transactions(self, limit=None):
         params = {'symbol': 'BTCUSD'}
@@ -169,5 +171,6 @@ class Bitfinex(ExchangeABC):
                 type(e), str(e), str(order_id)))
 
 
+eclass = Bitfinex
 exchange = Bitfinex(exchange_config['bitfinex']['api_creds']['key'],
                     exchange_config['bitfinex']['api_creds']['secret'])

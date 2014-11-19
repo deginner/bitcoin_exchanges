@@ -3,26 +3,14 @@ import hmac
 import json
 import time
 import requests
+from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
+
 from bitcoin_exchanges.exchange_util import ExchangeABC, ExchangeError, exchange_config, create_ticker, BLOCK_ORDERS
 
 
 baseUrl = "https://www.bitstamp.net/api/"
 REQ_TIMEOUT = 10  # seconds
-
-
-def api_get(path):
-    url = baseUrl + path + '/'
-    headers = {'Content-type': 'application/x-www-form-urlencoded',
-               'Accept': 'application/json',
-               'User-Agent': 'bitcoin_exchanges'}
-    try:
-        req = requests.get(url, headers=headers, timeout=REQ_TIMEOUT)
-        response = req.text
-    except requests.exceptions.HTTPError as e:
-        print e
-        return None
-    return response
 
 
 class Bitstamp(ExchangeABC):
@@ -82,6 +70,20 @@ class Bitstamp(ExchangeABC):
             raise ExchangeError('bitstamp', message=response)
         return response
 
+    @classmethod
+    def api_get(cls, path):
+        url = baseUrl + path + '/'
+        headers = {'Content-type': 'application/x-www-form-urlencoded',
+                   'Accept': 'application/json',
+                   'User-Agent': 'bitcoin_exchanges'}
+        try:
+            req = requests.get(url, headers=headers, timeout=REQ_TIMEOUT)
+            response = req.text
+        except requests.exceptions.HTTPError as e:
+            print e
+            return None
+        return response
+
     def cancel_order(self, oid):
         """
         Returns 'true' if order has been found and canceled.
@@ -122,24 +124,24 @@ class Bitstamp(ExchangeABC):
         :param str btype: The balance types to include
         """
         try:
-            stampBal = json.loads(self.submit_request('balance', {}, True))
-            if 'btc_balance' not in stampBal or 'usd_balance' not in stampBal:
+            stampbal = json.loads(self.submit_request('balance', {}, True))
+            if 'btc_balance' not in stampbal or 'usd_balance' not in stampbal:
                 raise ExchangeError(exchange='bitstamp',
                                     message="Bitstamp balance information unavailable")
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_open_orders' % (type(e), str(e)))
 
         if btype == 'total':
-            total = MultiMoney(Money(stampBal['btc_balance']), Money(stampBal['usd_balance'], currency='USD'))
+            total = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
             return total
         elif btype == 'available':
             # TODO this isn't correct
-            available = MultiMoney(Money(stampBal['btc_balance']), Money(stampBal['usd_balance'], currency='USD'))
+            available = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
             return available
         else:
-            total = MultiMoney(Money(stampBal['btc_balance']), Money(stampBal['usd_balance'], currency='USD'))
+            total = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
             # TODO this isn't correct
-            available = MultiMoney(Money(stampBal['btc_balance']), Money(stampBal['usd_balance'], currency='USD'))
+            available = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
             return total, available
 
     def get_open_orders(self):
@@ -154,10 +156,11 @@ class Bitstamp(ExchangeABC):
         rawos = self.submit_request('open_orders', {}, True)
         return json.loads(rawos)
 
-    def get_order_book(self, pair='ignored'):
+    @classmethod
+    def get_order_book(cls, pair='ignored'):
         opath = 'order_book'
         try:
-            jresp = api_get(opath)
+            jresp = cls.api_get(opath)
             response = json.loads(jresp)
         except (TypeError, ValueError):
             return None
@@ -167,10 +170,11 @@ class Bitstamp(ExchangeABC):
             raise ExchangeError(exchange='bitstamp', message=response['error'])
         return None
 
-    def get_ticker(self, pair='ignored'):
+    @classmethod
+    def get_ticker(cls, pair='ignored'):
         try:
-            rawtick = json.loads(api_get('ticker'))
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, ValueError) as e:
+            rawtick = json.loads(cls.api_get('ticker'))
+        except (ConnectionError, Timeout, ValueError) as e:
             raise ExchangeError('bitfinex', '%s %s while sending get_ticker to bitfinex' % (type(e), str(e)))
 
         return create_ticker(bid=rawtick['bid'], ask=rawtick['ask'], high=rawtick['high'], low=rawtick['low'],
@@ -192,6 +196,7 @@ class Bitstamp(ExchangeABC):
         return json.loads(self.submit_request('user_transactions', {}, True, timedelta))
 
 
+eclass = Bitstamp
 exchange = Bitstamp(exchange_config['bitstamp']['api_creds']['key'],
                     exchange_config['bitstamp']['api_creds']['secret'],
                     exchange_config['bitstamp']['api_creds']['clientid'])

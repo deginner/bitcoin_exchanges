@@ -84,16 +84,16 @@ class BTCChina(ExchangeABC):
         else:
             return total, available
 
-    def get_depth(self, pair='ignored'):
+    @classmethod
+    def get_order_book(cls, pair='ignored'):
         return btcny.get_market_depth()
 
     def get_open_orders(self):
         return btcny.get_orders()
 
-    get_order_book = get_depth
-
-    def get_ticker(self, **kwargs):
-        rawticker = btcny.getTicker()
+    @classmethod
+    def get_ticker(cls, **kwargs):
+        rawticker = btcny.get_ticker()
         if 'ticker' in rawticker:
             ticker = rawticker['ticker']
             return create_ticker(bid=ticker['buy'], ask=ticker['sell'], high=ticker['high'], low=ticker['low'],
@@ -104,8 +104,10 @@ class BTCChina(ExchangeABC):
     def get_transactions(self, limit=None):
         return btcny.get_transactions(limit=limit)
 
-    def get_usd_ticker(self):
+    @classmethod
+    def get_usd_ticker(cls):
         return btcny.getUSDTicker()
 
 
+eclass = BTCChina
 exchange = BTCChina()

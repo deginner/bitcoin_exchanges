@@ -55,7 +55,8 @@ class ExchangeABC:
         """
         pass
 
-    def format_book_item(self, item):
+    @classmethod
+    def format_book_item(cls, item):
         """
         Format an item from the orderbook (e.g. bid or ask) in a specific way.
         If the data provided by the exchange does not match the default
@@ -65,7 +66,8 @@ class ExchangeABC:
         # expects each order to be a list with first element as price and second as size
         return OrderbookItem(Decimal(item[0]), Decimal(item[1]))
 
-    def unformat_book_item(self, item):
+    @classmethod
+    def unformat_book_item(cls, item):
         """
         Reverse format an item to the raw orderbook style.
         If the data provided by the exchange does not match the default
@@ -92,8 +94,9 @@ class ExchangeABC:
         """
         pass
 
+    @classmethod
     @abc.abstractmethod
-    def get_order_book(self, pair=None):
+    def get_order_book(cls, pair=None):
         """
         Get the orderbook for this exchange.
 
@@ -105,8 +108,10 @@ class ExchangeABC:
         """
         pass
 
+
+    @classmethod
     @abc.abstractmethod
-    def get_ticker(self, pair=None):
+    def get_ticker(cls, pair=None):
         """
         Return the current ticker for this exchange.
         :param pair: If the exchange supports multiple pairs, then the "pair" param
@@ -176,5 +181,5 @@ def get_live_exchange_workers():
     exchanges = {}
     for exch in exchange_config:
         if exch != 'UFX' and exchange_config[exch]['live']:
-            exchanges[exch] = importlib.import_module('bitcoin_exchanges.%s' % exch).exchange
+            exchanges[exch] = importlib.import_module('bitcoin_exchanges.%s' % exch)
     return exchanges

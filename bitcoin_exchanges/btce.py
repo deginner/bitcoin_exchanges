@@ -5,17 +5,15 @@ import time
 from decimal import Decimal
 import requests
 import urllib
-
+from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
-
 from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB,\
     BLOCK_ORDERS
 
 
-REQ_TIMEOUT = 10  # seconds
-
 publicUrl = 'https://btc-e.com/api/2/btc_usd/'
 tradeUrl = 'https://btc-e.com/tapi/'
+REQ_TIMEOUT = 10  # seconds
 
 
 class BTCE(ExchangeABC):
@@ -64,11 +62,12 @@ class BTCE(ExchangeABC):
             response = requests.post(url=url, data=params, headers=headers, timeout=REQ_TIMEOUT).text
             if "invalid nonce parameter" in response and retry < 3:
                 return self.send_btce(params=params, sign=sign, retry=retry + 1)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        except (ConnectionError, Timeout) as e:
             raise ExchangeError('btce', '%s %s while sending to btce %r' % (type(e), str(e), params))
         return response
 
-    def papi(self, method):
+    @classmethod
+    def papi(cls, method):
         """
         BTC-E public api interface
         """
@@ -76,7 +75,7 @@ class BTCE(ExchangeABC):
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         try:
             response = requests.get(url, headers=headers, timeout=REQ_TIMEOUT)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        except (ConnectionError, Timeout) as e:
             raise ExchangeError('btce', '%s %s while sending %r to %s' % (type(e), e, method, url))
         return response.text
 
@@ -182,8 +181,9 @@ class BTCE(ExchangeABC):
                     bal += Money(amount=Decimal(olist[oNum]['amount']))
         return bal
 
-    def get_depth(self, pair='ignored'):
-        response = self.papi('depth')
+    @classmethod
+    def get_order_book(cls, pair='ignored'):
+        response = cls.papi('depth')
         return json.loads(response)
 
     def get_info(self):
@@ -204,10 +204,9 @@ class BTCE(ExchangeABC):
             if e.message == 'no orders':
                 return {}
 
-    get_order_book = get_depth
-
-    def get_ticker(self, pair='ignored'):
-        response = self.papi('ticker')
+    @classmethod
+    def get_ticker(cls, pair='ignored'):
+        response = cls.papi('ticker')
         ticker = json.loads(response)['ticker']
         ask = ticker.pop('buy')
         bid = ticker.pop('sell')
@@ -245,4 +244,5 @@ class BTCE(ExchangeABC):
         return self._handle_response(self.send_btce(params))
 
 
+eclass = BTCE
 exchange = BTCE(key=exchange_config['btce']['api_creds']['key'], secret=exchange_config['btce']['api_creds']['secret'])
