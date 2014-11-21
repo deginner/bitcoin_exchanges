@@ -17,11 +17,21 @@ exchange_config = {
     'btce': {
         'live': True,
         'api_creds': {'key': '', 'secret': ''},
-        'address': ''  # a deposit address from your btc-e account
+        'address': ''  # a deposit address from your account
+    },
+    'huobi': {
+        'live': True,
+        'api_creds': {'key': '', 'secret': ''},
+        'address': ''  # a deposit address from your account
     },
     'kraken': {
         'live': True,
         'api_creds': {'key': '', 'secret': ''}
+    },
+    'okcoin': {
+        'live': True,
+        'api_creds': {'partner': '', 'secret': ''},
+        'address': ''  # a deposit address from your account
     }
 }
 
