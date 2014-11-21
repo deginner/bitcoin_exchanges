@@ -4,32 +4,46 @@ BLOCK_ORDERS = False  # If True, then orders will not be submitted to exchanges
 exchange_config = {
     'btcchina': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': -1,  # confirmed
         'api_creds': {'key': '',  'secret': ''}
     },
     'bitstamp': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': 0,  # confirmed
         'api_creds': {'key': '',  'secret': '', 'clientid': ''}
     },
     'bitfinex': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': 0,  # confirmed
         'api_creds': {'key': '', 'secret': ''}
     },
     'btce': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': 0,  # confirmed
         'api_creds': {'key': '', 'secret': ''},
         'address': ''  # a deposit address from your account
     },
     'huobi': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': -1,  # confirmed
         'api_creds': {'key': '', 'secret': ''},
         'address': ''  # a deposit address from your account
     },
     'kraken': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': 0,  # confirmed
         'api_creds': {'key': '', 'secret': ''}
     },
     'okcoin': {
         'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': -1,  # confirmed
         'api_creds': {'partner': '', 'secret': ''},
         'address': ''  # a deposit address from your account
     }

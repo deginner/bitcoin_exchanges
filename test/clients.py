@@ -3,7 +3,8 @@ import unittest
 
 from moneyed import Money, MultiMoney
 
-from bitcoin_exchanges.exchange_util import get_live_exchange_workers, Ticker, ExchangeError, OrderbookItem
+from bitcoin_exchanges.exchange_util import get_live_exchange_workers, Ticker, ExchangeError, OrderbookItem, \
+    exchange_config
 
 EXCHANGE = get_live_exchange_workers()
 
@@ -94,6 +95,11 @@ class TestAPI(unittest.TestCase):
                 self.assertIsInstance(item, OrderbookItem)
                 self.assertIsInstance(item[0], Decimal)
                 self.assertIsInstance(item[1], Decimal)
+
+            # check best_bid and best_ask are correct
+            best_bid = mod.eclass.format_book_item(raw_book['bids'][exchange_config[name]['best_bid']])
+            best_ask = mod.eclass.format_book_item(raw_book['asks'][exchange_config[name]['best_ask']])
+            self.assertGreaterEqual(float(best_bid[0]) * 1.05, float(best_ask[0]))
 
     def test_deposit_address(self):
         for name, mod in EXCHANGE.iteritems():
