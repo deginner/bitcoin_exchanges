@@ -97,8 +97,8 @@ class TestAPI(unittest.TestCase):
 
     def test_deposit_address(self):
         for name, mod in EXCHANGE.iteritems():
-            if name == 'btce':
-                continue  # btce doesn't support this feature
+            if name in ('btce', 'huobi', 'okcoin'):
+                continue  # these don't support this feature
             print "test_deposit_address %s" % name
             addy = mod.exchange.get_deposit_address()
             self.assertIsInstance(addy, str)

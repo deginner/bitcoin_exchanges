@@ -108,7 +108,6 @@ class ExchangeABC:
         """
         pass
 
-
     @classmethod
     @abc.abstractmethod
     def get_ticker(cls, pair=None):
