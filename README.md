@@ -10,6 +10,8 @@ Currently supported exchanges are:
 + [BTCChina](https://btcchina.com)
 + [BTC-E](https://btc-e.com)
 + [Kraken](https://www.kraken.com/)
++ [OKCoin](https://www.okcoin.com/?invid=2022222)
++ [Huobi](https://www.huobi.com/)
 + [Bitstamp](https://bitstamp.net)
 
 ## Installation
