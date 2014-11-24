@@ -12,6 +12,7 @@ Currently supported exchanges are:
 + [Kraken](https://www.kraken.com/)
 + [OKCoin](https://www.okcoin.com/?invid=2022222)
 + [Huobi](https://www.huobi.com/)
++ [LakeBTC](https://www.lakebtc.com/?ref=10civ1x)
 + [Bitstamp](https://bitstamp.net)
 
 ## Installation

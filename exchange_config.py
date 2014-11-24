@@ -40,6 +40,13 @@ exchange_config = {
         'best_ask': 0,  # confirmed
         'api_creds': {'key': '', 'secret': ''}
     },
+    'lakebtc': {
+        'live': True,
+        'best_bid': 0,  # confirmed
+        'best_ask': 0,  # confirmed
+        'api_creds': {'key': '', 'secret': ''},  # key is your email address
+        'address': ''  # a deposit address from your account
+    },
     'okcoin': {
         'live': True,
         'best_bid': 0,  # confirmed
