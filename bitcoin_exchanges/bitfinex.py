@@ -181,6 +181,12 @@ class Bitfinex(ExchangeABC):
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending get_deposit_address' % (type(e), str(e)))
 
+    def account_info(self):
+        try:
+            data = self.bitfinex_request('/v1/account_infos').json()
+        except ValueError as e:
+            raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_open_orders' % (type(e), str(e)))
+        return data
 
 eclass = Bitfinex
 exchange = Bitfinex(exchange_config['bitfinex']['api_creds']['key'],

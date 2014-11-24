@@ -135,13 +135,12 @@ class Bitstamp(ExchangeABC):
             total = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
             return total
         elif btype == 'available':
-            # TODO this isn't correct
-            available = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
+            available = MultiMoney(Money(stampbal['btc_available']), Money(stampbal['usd_available'], currency='USD'))
             return available
         else:
             total = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
             # TODO this isn't correct
-            available = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
+            available = MultiMoney(Money(stampbal['btc_available']), Money(stampbal['usd_available'], currency='USD'))
             return total, available
 
     def get_open_orders(self):

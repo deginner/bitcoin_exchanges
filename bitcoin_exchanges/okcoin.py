@@ -1,12 +1,6 @@
 import hashlib
-import hmac
-import json
-import time
-import urllib
 import requests
 from requests.exceptions import Timeout, ConnectionError
-from hashlib import sha384
-from base64 import b64encode
 
 from moneyed.classes import Money, MultiMoney
 
@@ -49,7 +43,7 @@ class OKCoin(ExchangeABC):
         except (ConnectionError, Timeout, ValueError) as e:
             raise ExchangeError('okcoin', '%s %s while sending %r' % (type(e), str(e), params))
         if 'error_code' in response:
-            raise ExchangeError('okcon', '%s while sending %r' % (str(response['error_code']), params))
+            raise ExchangeError('okcoin', '%s while sending %r' % (str(response['error_code']), params))
         return response
 
     def cancel_order(self, order_id, symbol='btc_usd'):
@@ -115,7 +109,7 @@ class OKCoin(ExchangeABC):
     def get_order_book(cls, pair='btc_usd', **kwargs):
         try:
             return requests.get('%sdepth.do?symbol=%s' % (BASE_URL, pair), timeout=REQ_TIMEOUT).json()
-        except ValueError as e:
+        except (ConnectionError, Timeout, ValueError) as e:
             raise ExchangeError('okcoin', '%s %s while sending get_order_book' % (type(e), str(e)))
 
     @classmethod
@@ -135,7 +129,7 @@ class OKCoin(ExchangeABC):
         resp = self.okcoin_request('order_history.do', params)
         if resp and 'result' in resp and resp['result']:
             return resp
-        raise ExchangeError('okcoin', 'unable to get open orders. response was %r' % resp)
+        raise ExchangeError('okcoin', 'unable to get transactions. response was %r' % resp)
 
     def get_deposit_address(self):
         return exchange_config['okcoin']['address']

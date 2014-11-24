@@ -1,12 +1,8 @@
 import hashlib
-import hmac
 import json
 import time
-import urllib
 import requests
 from requests.exceptions import Timeout, ConnectionError
-from hashlib import sha384
-from base64 import b64encode
 
 from moneyed.classes import Money, MultiMoney
 
@@ -37,7 +33,7 @@ class Huobi(ExchangeABC):
         params = params or {}
         params['method'] = endpoint
         params['access_key'] = self.key
-        params['created'] = str(int(time.time()))
+        params['created'] = int(time.time())
         params['sign'] = self.huobi_encode(params)
         if 'secret_key' in params:
             del params['secret_key']
@@ -58,7 +54,10 @@ class Huobi(ExchangeABC):
             raise ExchangeError('huobi', '%s error while sending %r, '
                                          'response is: %s' % (type(e), params, response.text))
         if 'result' in resp and resp['result'] == 'fail':
-            raise ExchangeError('huobi', '%s while sending %r' % (str(error_codes[resp['code']]), params))
+            if resp['code'] in error_codes:
+                raise ExchangeError('huobi', '%s while sending %r' % (str(error_codes[resp['code']]), params))
+            else:
+                raise ExchangeError('huobi', '%s while sending %r' % (str(resp), params))
         return resp
 
     def cancel_order(self, order_id):
@@ -88,18 +87,20 @@ class Huobi(ExchangeABC):
             raise Exception('unknown side %r' % otype)
 
         # avoid round numbers to prevent hashing/auth issues
+        price = float(price)
+        amount = float(amount)
         if round(price) == price:
             if otype == 'buy':
                 price -= 0.01
             else:
                 price += 0.01
         if round(amount) == amount:
-            amount = amount + 0.001
+            amount += 0.001
 
         params = {
             'coin_type': 1,
-            'price': price,
-            'amount': amount,
+            'price': round(price, 2),
+            'amount': round(amount, 4),
         }
         data = self.huobi_request(otype, params)
         if 'result' in data and 'uccess' in data['result']:
@@ -154,25 +155,35 @@ error_codes = {
     3: 'Transaction has started, can not be started again',
     4: 'Transaction has ended',
     10: 'There is not enough bitcoins',
+    11: 'Not enough LTC',
+    18: 'Incorrect payment password',
     26: 'The order does not exist',
     41: 'The order has ended, can not be modified',
     42: 'The order has been canceled, can not be modified',
     44: 'Transaction price is too low',
     45: 'Transaction prices are too high',
-    46: 'The small number of transactions, the minimum number 0.001',
-    47: 'Too much the number of transactions',
-    55: '105% of the purchase price can not be higher than the price of',
-    56: 'Selling price can not be less than 95% of the price of',
+    46: 'The minimum order size is 0.001',
+    47: 'Too many requests',
+    55: '10% higher than market price is not allowed',
+    56: '10% lower than market price is not allowed',
     64: 'Invalid request',
-    65: 'Ineffective methods',
+    65: 'Invalid method',
     66: 'Access key validation fails',
     67: 'Private key authentication fails',
     68: 'Invalid price',
-    69: 'Invalid quantity',
+    69: 'Invalid amount',
     70: 'Invalid submission time',
-    71: 'Request too many times',
+    71: 'Request overflow',
     87: 'The number of transactions is less than 0.1 BTC, please do not bid the price higher than the price of the 1%',
-    88: 'The number of transactions is less than 0.1 BTC, please do not sell below the market price of a 1%'
+    88: 'The number of transactions is less than 0.1 BTC, please do not sell below the market price of a 1%',
+    89: 'Buying price cannot exceed 1% of market price when transaction amount is less than 0.1 BTC.',
+    90: 'Selling price cannot be lower 1% of market price when transaction amount is less than 0.1 BTC.',
+    91: 'Invalid type',
+    92: 'Buy price cannot be higher 10% than market price.',
+    93: 'Sell price cannot be lower 10% than market price.',
+    97: 'Please enter payment password.',
+    103: 'annoying, undocumented, and happens all of the time on create_order',
+    107: 'Order is exist.',
 }
 
 
