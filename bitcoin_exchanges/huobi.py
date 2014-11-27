@@ -6,7 +6,7 @@ from requests.exceptions import Timeout, ConnectionError
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, MyOrder
 
 
 BASE_URL = 'https://api.huobi.com/apiv2.php'
@@ -123,7 +123,7 @@ class Huobi(ExchangeABC):
         orders = []
         for o in rawos:
             side = 'ask' if o['type'] == 1 else 'bid'
-            orders.append(Order(Money(o['order_price'], self.fiatcurrency), Money(o['order_amount']), side,
+            orders.append(MyOrder(Money(o['order_price'], self.fiatcurrency), Money(o['order_amount']), side,
                           self.name, str(o['id'])))
         return orders
 

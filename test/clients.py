@@ -4,7 +4,7 @@ import unittest
 from moneyed import Money, MultiMoney
 
 from bitcoin_exchanges.exchange_util import get_live_exchange_workers, Ticker, ExchangeError, OrderbookItem, \
-    exchange_config, Order
+    exchange_config, MyOrder
 
 EXCHANGE = get_live_exchange_workers()
 
@@ -120,7 +120,7 @@ class TestAPI(unittest.TestCase):
             orders = mod.exchange.get_open_orders()
             self.assertIsInstance(orders, list)
             for o in orders:
-                self.assertIsInstance(o, Order)
+                self.assertIsInstance(o, MyOrder)
                 self.assertIsInstance(o.price, Money)
                 self.assertEqual(str(o.price.currency), mod.exchange.fiatcurrency)
                 self.assertIsInstance(o.amount, Money)

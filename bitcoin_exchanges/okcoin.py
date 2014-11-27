@@ -4,7 +4,7 @@ from requests.exceptions import Timeout, ConnectionError
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, MyOrder
 
 
 BASE_URL = 'https://www.okcoin.com/api/v1/'
@@ -108,7 +108,7 @@ class OKCoin(ExchangeABC):
         orders = []
         for o in rawos:
             side = 'ask' if o['type'] == 'sell' else 'bid'
-            orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['amount']), side,
+            orders.append(MyOrder(Money(o['price'], self.fiatcurrency), Money(o['amount']), side,
                           self.name, str(o['order_id'])))
         return orders
 

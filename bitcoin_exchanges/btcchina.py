@@ -1,5 +1,5 @@
 from moneyed.classes import Money, MultiMoney
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, Order
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, MyOrder
 
 from old import btcchina
 
@@ -94,7 +94,7 @@ class BTCChina(ExchangeABC):
         if 'order' in data:
             rawos = data['order']
             for o in rawos:
-                orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['amount']), str(o['type']),
+                orders.append(MyOrder(Money(o['price'], self.fiatcurrency), Money(o['amount']), str(o['type']),
                               self.name, str(o['id'])))
         return orders
 

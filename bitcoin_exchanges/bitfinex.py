@@ -8,7 +8,7 @@ from base64 import b64encode
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, MyOrder
 
 
 BASE_URL = 'https://api.bitfinex.com'
@@ -132,8 +132,8 @@ class Bitfinex(ExchangeABC):
         orders = []
         for o in rawos:
             side = 'ask' if o['side'] == 'sell' else 'bid'
-            orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['remaining_amount']), side,
-                                self.name, str(o['id'])))
+            orders.append(MyOrder(Money(o['price'], self.fiatcurrency), Money(o['remaining_amount']), side,
+                                  self.name, str(o['id'])))
         return orders
 
     @classmethod

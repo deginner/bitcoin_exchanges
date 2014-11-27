@@ -8,7 +8,7 @@ from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
 import time
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, MyOrder
 
 
 BASE_URL = 'https://www.lakebtc.com/api_v1/'
@@ -113,7 +113,7 @@ class Lakebtc(ExchangeABC):
         orders = []
         for o in rawos:
             side = 'ask' if o['category'] == 'sell' else 'bid'
-            orders.append(Order(Money(o['ppc'], self.fiatcurrency), Money(o['amount']), side,
+            orders.append(MyOrder(Money(o['ppc'], self.fiatcurrency), Money(o['amount']), side,
                           self.name, str(o['id'])))
         return orders
 

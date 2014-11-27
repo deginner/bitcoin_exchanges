@@ -8,7 +8,7 @@ import urllib
 from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
 from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB,\
-    BLOCK_ORDERS, Order
+    BLOCK_ORDERS, MyOrder
 
 
 publicUrl = 'https://btc-e.com/api/2/btc_usd/'
@@ -206,7 +206,7 @@ class BTCE(ExchangeABC):
         orders = []
         for order_id, o in rawos.iteritems():
             side = 'ask' if o['type'] == 'sell' else 'bid'
-            orders.append(Order(Money(o['rate'], self.fiatcurrency), Money(o['amount']), side, self.name,
+            orders.append(MyOrder(Money(o['rate'], self.fiatcurrency), Money(o['amount']), side, self.name,
                                 str(order_id)))
         return orders
 

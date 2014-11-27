@@ -8,7 +8,7 @@ import urllib
 from requests.exceptions import Timeout, ConnectionError
 from moneyed import MultiMoney, Money
 
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, Order
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, MyOrder
 
 import time
 
@@ -192,7 +192,7 @@ class Kraken(ExchangeABC):
             for id, o in rawos.iteritems():
                 side = 'ask' if o['descr']['type'] == 'sell' else 'bid'
                 amount = Money(o['vol']) - Money(o['vol_exec'])
-                orders.append(Order(Money(o['descr']['price'], self.fiatcurrency), amount, side, self.name, str(id)))
+                orders.append(MyOrder(Money(o['descr']['price'], self.fiatcurrency), amount, side, self.name, str(id)))
         return orders
 
     def get_trades_hstory(self):

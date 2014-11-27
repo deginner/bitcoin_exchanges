@@ -15,7 +15,7 @@ if config_dir not in sys.path:
 from exchange_config import exchange_config, nonceDB, BLOCK_ORDERS
 
 OrderbookItem = namedtuple('OrderbookItem', 'price amount')
-Order = namedtuple('Order', ['price', 'amount', 'side', 'exchange', 'order_id'])
+MyOrder = namedtuple('Order', ['price', 'amount', 'side', 'exchange', 'order_id'])
 Ticker = namedtuple('Ticker', ['bid', 'ask', 'high', 'low', 'volume', 'last', 'timestamp'])
 
 

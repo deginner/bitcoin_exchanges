@@ -7,7 +7,7 @@ from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
 
 from bitcoin_exchanges.exchange_util import ExchangeABC, ExchangeError, exchange_config, create_ticker, BLOCK_ORDERS, \
-    Order
+    MyOrder
 
 
 baseUrl = "https://www.bitstamp.net/api/"
@@ -152,7 +152,7 @@ class Bitstamp(ExchangeABC):
         orders = []
         for o in jos:
             side = 'ask' if o['type'] == 1 else 'bid'
-            orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['amount']), side, self.name, str(o['id'])))
+            orders.append(MyOrder(Money(o['price'], self.fiatcurrency), Money(o['amount']), side, self.name, str(o['id'])))
         return orders
 
     @classmethod

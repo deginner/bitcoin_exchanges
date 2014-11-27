@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='bitcoin_exchanges',
-    version='0.0.2',
+    version='0.0.3',
     packages=['bitcoin_exchanges', 'bitcoin_exchanges.old', 'bitcoin_exchanges.helpers'],
     url='',
     license='GPLv3',
