@@ -15,6 +15,8 @@ if config_dir not in sys.path:
 from exchange_config import exchange_config, nonceDB, BLOCK_ORDERS
 
 OrderbookItem = namedtuple('OrderbookItem', 'price amount')
+Order = namedtuple('Order', ['price', 'amount', 'side', 'exchange', 'order_id'])
+Ticker = namedtuple('Ticker', ['bid', 'ask', 'high', 'low', 'volume', 'last', 'timestamp'])
 
 
 class ExchangeABC:
@@ -77,6 +79,7 @@ class ExchangeABC:
         # expects each order to be a list with first element as price and second as size
         return [str(item[0]), str(item[1])]
 
+
     @abc.abstractmethod
     def get_balance(self, btype='total'):
         """
@@ -89,7 +92,7 @@ class ExchangeABC:
     @abc.abstractmethod
     def get_open_orders(self):
         """
-        :return:  a list of open orders.
+        :return:  a list of open orders as Order objects.
         :rtype: list
         """
         pass
@@ -167,10 +170,6 @@ class ExchangeError(Exception):
 
     def __str__(self):
         return str(self.exchange) + ":\t" + str(self.error)
-
-
-Ticker = namedtuple('Ticker', ['bid', 'ask', 'high', 'low', 'volume', 'last',
-                               'timestamp'])
 
 
 # Convenience Function to create tuples

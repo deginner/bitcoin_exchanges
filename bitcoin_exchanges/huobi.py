@@ -6,7 +6,7 @@ from requests.exceptions import Timeout, ConnectionError
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
 
 
 BASE_URL = 'https://api.huobi.com/apiv2.php'
@@ -71,7 +71,7 @@ class Huobi(ExchangeABC):
         oorders = self.get_open_orders()
         canceled = True
         for o in oorders:
-            result = self.cancel_order(o['id'])
+            result = self.cancel_order(o.order_id)
             if not result:
                 canceled = False
         return canceled
@@ -119,7 +119,13 @@ class Huobi(ExchangeABC):
 
     def get_open_orders(self):
         params = {'coin_type': 1}
-        return self.huobi_request('get_orders', params)
+        rawos = self.huobi_request('get_orders', params)
+        orders = []
+        for o in rawos:
+            side = 'ask' if o['type'] == 1 else 'bid'
+            orders.append(Order(Money(o['order_price'], self.fiatcurrency), Money(o['order_amount']), side,
+                          self.name, str(o['id'])))
+        return orders
 
     @classmethod
     def get_order_book(cls, pair='btc_usd', **kwargs):

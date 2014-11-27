@@ -93,7 +93,9 @@ class BTCChina():
                 if 'result' in resp_dict:
                     return resp_dict['result']
                 elif 'error' in resp_dict:
-                    return resp_dict['error']
+                    ExchangeError('btcchina', 'error response for %r: %s' % (post_data, str(resp_dict['error'])))
+                elif 'code' in resp_dict:
+                    ExchangeError('btcchina', 'error response for %r: %s' % (post_data, str(resp_dict['code'])))
         elif response.status_code == 401 and retry < 2:
             # possible nonce collision?
             self._private_request(post_data, retry=retry + 1)

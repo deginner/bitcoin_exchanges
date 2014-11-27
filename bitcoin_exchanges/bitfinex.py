@@ -8,7 +8,7 @@ from base64 import b64encode
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
 
 
 BASE_URL = 'https://api.bitfinex.com'
@@ -126,9 +126,15 @@ class Bitfinex(ExchangeABC):
 
     def get_open_orders(self):
         try:
-            return self.bitfinex_request('/v1/orders').json()
+            rawos = self.bitfinex_request('/v1/orders').json()
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_open_orders' % (type(e), str(e)))
+        orders = []
+        for o in rawos:
+            side = 'ask' if o['side'] == 'sell' else 'bid'
+            orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['remaining_amount']), side,
+                                self.name, str(o['id'])))
+        return orders
 
     @classmethod
     def get_order_book(cls, pair='btcusd', **kwargs):
@@ -187,6 +193,7 @@ class Bitfinex(ExchangeABC):
         except ValueError as e:
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_open_orders' % (type(e), str(e)))
         return data
+
 
 eclass = Bitfinex
 exchange = Bitfinex(exchange_config['bitfinex']['api_creds']['key'],

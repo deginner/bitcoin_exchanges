@@ -8,7 +8,7 @@ import urllib
 from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
 from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB,\
-    BLOCK_ORDERS
+    BLOCK_ORDERS, Order
 
 
 publicUrl = 'https://btc-e.com/api/2/btc_usd/'
@@ -199,10 +199,16 @@ class BTCE(ExchangeABC):
     def get_open_orders(self):
         params = {"method": "ActiveOrders"}
         try:
-            return self._handle_response(self.send_btce(params))
+            rawos = self._handle_response(self.send_btce(params))
         except ExchangeError as e:
             if e.message == 'no orders':
-                return {}
+                return []
+        orders = []
+        for order_id, o in rawos.iteritems():
+            side = 'ask' if o['type'] == 'sell' else 'bid'
+            orders.append(Order(Money(o['rate'], self.fiatcurrency), Money(o['amount']), side, self.name,
+                                str(order_id)))
+        return orders
 
     @classmethod
     def get_ticker(cls, pair='ignored'):
@@ -245,6 +251,7 @@ class BTCE(ExchangeABC):
 
     def get_deposit_address(self):
         return exchange_config['btce']['address']
+
 
 eclass = BTCE
 exchange = BTCE(key=exchange_config['btce']['api_creds']['key'], secret=exchange_config['btce']['api_creds']['secret'])

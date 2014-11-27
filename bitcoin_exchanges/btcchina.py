@@ -1,5 +1,5 @@
 from moneyed.classes import Money, MultiMoney
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, Order
 
 from old import btcchina
 
@@ -19,7 +19,7 @@ class BTCChina(ExchangeABC):
         return btcny.get_account_info()
 
     def cancel_order(self, oid):
-        return btcny.cancel(oid)
+        return btcny.cancel(int(oid))
 
     def cancel_orders(self, **kwargs):
         btcny.cancel_all_orders()
@@ -89,7 +89,14 @@ class BTCChina(ExchangeABC):
         return btcny.get_market_depth()
 
     def get_open_orders(self):
-        return btcny.get_orders()
+        data = btcny.get_orders()
+        orders = []
+        if 'order' in data:
+            rawos = data['order']
+            for o in rawos:
+                orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['amount']), str(o['type']),
+                              self.name, str(o['id'])))
+        return orders
 
     @classmethod
     def get_ticker(cls, **kwargs):

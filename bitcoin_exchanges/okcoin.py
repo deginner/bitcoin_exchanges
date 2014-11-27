@@ -4,7 +4,7 @@ from requests.exceptions import Timeout, ConnectionError
 
 from moneyed.classes import Money, MultiMoney
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
 
 
 BASE_URL = 'https://www.okcoin.com/api/v1/'
@@ -102,8 +102,15 @@ class OKCoin(ExchangeABC):
         params = {'order_id': -1, 'symbol': symbol}
         resp = self.okcoin_request('order_info.do', params)
         if resp and 'result' in resp and resp['result']:
-            return resp['orders']
-        raise ExchangeError('okcoin', 'unable to get open orders. response was %r' % resp)
+            rawos = resp['orders']
+        else:
+            raise ExchangeError('okcoin', 'unable to get open orders. response was %r' % resp)
+        orders = []
+        for o in rawos:
+            side = 'ask' if o['type'] == 'sell' else 'bid'
+            orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['amount']), side,
+                          self.name, str(o['order_id'])))
+        return orders
 
     @classmethod
     def get_order_book(cls, pair='btc_usd', **kwargs):

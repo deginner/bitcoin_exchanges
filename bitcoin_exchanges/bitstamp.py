@@ -6,7 +6,8 @@ import requests
 from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
 
-from bitcoin_exchanges.exchange_util import ExchangeABC, ExchangeError, exchange_config, create_ticker, BLOCK_ORDERS
+from bitcoin_exchanges.exchange_util import ExchangeABC, ExchangeError, exchange_config, create_ticker, BLOCK_ORDERS, \
+    Order
 
 
 baseUrl = "https://www.bitstamp.net/api/"
@@ -14,6 +15,8 @@ REQ_TIMEOUT = 10  # seconds
 
 
 class Bitstamp(ExchangeABC):
+    name = 'bitstamp'
+
     def __init__(self, key, secret, clientid):
         super(Bitstamp, self).__init__()
         self.key = key
@@ -98,10 +101,8 @@ class Bitstamp(ExchangeABC):
         """
         orders = self.get_open_orders()
         for order in orders:
-            if (typ == 'all' or
-                    (typ == 'ask' and order['type'] == 1) or
-                    (typ == 'bid' and order['type'] == 0)):
-                print self.submit_request('cancel_order', {'id': str(order['id'])}, True)
+            if (typ == 'all' or typ == order.side):
+                print self.submit_request('cancel_order', {'id': str(order.order_id)}, True)
         return True
 
     def create_order(self, amount, price, otype):
@@ -117,7 +118,9 @@ class Bitstamp(ExchangeABC):
         data = {'amount': round(float(amount), 2),
                 'price': round(price, 2)}
         response = json.loads(self.submit_request(otype, data, True))
-        return response
+        if 'id' in response:
+            return str(response['id'])
+        raise ExchangeError('bitstamp', 'unable to create order %r' % data)
 
     def get_balance(self, btype='total'):
         """
@@ -144,16 +147,13 @@ class Bitstamp(ExchangeABC):
             return total, available
 
     def get_open_orders(self):
-        """
-        Returns JSON list of open orders. Each order is represented as dictionary:
-            id - order id
-            datetime - date and time
-            type - buy or sell (0 - buy; 1 - sell)
-            price - price
-            amount - amount
-        """
         rawos = self.submit_request('open_orders', {}, True)
-        return json.loads(rawos)
+        jos = json.loads(rawos)
+        orders = []
+        for o in jos:
+            side = 'ask' if o['type'] == 1 else 'bid'
+            orders.append(Order(Money(o['price'], self.fiatcurrency), Money(o['amount']), side, self.name, str(o['id'])))
+        return orders
 
     @classmethod
     def get_order_book(cls, pair='ignored'):
@@ -196,6 +196,7 @@ class Bitstamp(ExchangeABC):
 
     def get_deposit_address(self):
         return str(json.loads(self.submit_request('bitcoin_deposit_address', {}, True)))
+
 
 eclass = Bitstamp
 exchange = Bitstamp(exchange_config['bitstamp']['api_creds']['key'],

@@ -4,7 +4,7 @@ import unittest
 from moneyed import Money, MultiMoney
 
 from bitcoin_exchanges.exchange_util import get_live_exchange_workers, Ticker, ExchangeError, OrderbookItem, \
-    exchange_config
+    exchange_config, Order
 
 EXCHANGE = get_live_exchange_workers()
 
@@ -50,10 +50,13 @@ class TestAPI(unittest.TestCase):
         for name, mod in EXCHANGE.iteritems():
             print "test_create_order %s" % name
             ticker = mod.exchange.get_ticker()
+            bid_price = float(ticker.last.amount) / 2
+            if bid_price * 0.02 < 5.5:  # minimum order size is $5 on bitstamp, which is the highest min size
+                bid_price = 5.5 / 0.02
             ask_price = float(ticker.last.amount) * 2
             bal = mod.exchange.get_balance(btype='available')
-            if bal.getMoneys(mod.exchange.fiatcurrency) >= Money(1, currency=mod.exchange.fiatcurrency):
-                oid = mod.exchange.create_order(amount=1, price=1, otype='bid')
+            if bal.getMoneys(mod.exchange.fiatcurrency) > Money(bid_price * 0.021, currency=mod.exchange.fiatcurrency):
+                oid = mod.exchange.create_order(amount=0.02, price=bid_price, otype='bid')
                 self.assertIsInstance(oid, str)
             else:
                 print "insufficient balance to test create bid order for %s" % name
@@ -61,8 +64,8 @@ class TestAPI(unittest.TestCase):
             self.assertRaises(ExchangeError, mod.exchange.create_order, amount=100000000, price=10,
                               otype='bid')
 
-            if bal.getMoneys('BTC') >= Money(0.01):
-                oid = mod.exchange.create_order(amount=0.01, price=ask_price, otype='ask')
+            if bal.getMoneys('BTC') >= Money(0.02):
+                oid = mod.exchange.create_order(amount=0.02, price=ask_price, otype='ask')
                 self.assertIsInstance(oid, str)
             else:
                 print "insufficient balance to test create ask order for %s" % name
@@ -110,6 +113,21 @@ class TestAPI(unittest.TestCase):
             self.assertIsInstance(addy, str)
             self.assertIn(addy[0], '13')
             # todo real address hash check
+
+    def test_get_open_orders(self):
+        for name, mod in EXCHANGE.iteritems():
+            print "test_get_open_orders %s" % name
+            orders = mod.exchange.get_open_orders()
+            self.assertIsInstance(orders, list)
+            for o in orders:
+                self.assertIsInstance(o, Order)
+                self.assertIsInstance(o.price, Money)
+                self.assertEqual(str(o.price.currency), mod.exchange.fiatcurrency)
+                self.assertIsInstance(o.amount, Money)
+                self.assertEqual(str(o.amount.currency), 'BTC')
+                self.assertIn(o.side, ('bid', 'ask'))
+                self.assertIn(o.exchange, EXCHANGE)
+                self.assertIsInstance(o.order_id, str)
 
 
 if __name__ == "__main__":

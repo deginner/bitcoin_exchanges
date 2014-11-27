@@ -8,7 +8,7 @@ import urllib
 from requests.exceptions import Timeout, ConnectionError
 from moneyed import MultiMoney, Money
 
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, Order
 
 import time
 
@@ -123,8 +123,8 @@ class Kraken(ExchangeABC):
     def cancel_orders(self, **kwargs):
         orders = self.get_open_orders()
         success = True
-        for o in orders['open']:
-            resp = self.cancel_order(o)
+        for o in orders:
+            resp = self.cancel_order(o.order_id)
             if not resp:
                 success = False
         return success
@@ -167,17 +167,11 @@ class Kraken(ExchangeABC):
 
         available = copy.copy(total)
         oorders = self.get_open_orders()
-        if oorders and 'open' in oorders:
-            for oid in oorders['open']:
-                order = oorders['open'][oid]
-                if order['descr']['type'] == 'buy':
-                    vol = Money(amount=order['vol'], currency='EUR')
-                    volexec = Money(amount=order['vol_exec'], currency='EUR')
-                    available -= (vol - volexec)
-                else:
-                    vol = Money(amount=order['vol']) / Money(order['descr']['price'])
-                    volexec = Money(amount=order['vol_exec']) / Money(order['descr']['price'])
-                    available -= (vol - volexec)
+        for o in oorders:
+            if o.side == 'bid':
+                available -= o.price * o.amount.amount
+            else:
+                available -= o.amount
 
         if btype == 'available':
             return available
@@ -192,8 +186,14 @@ class Kraken(ExchangeABC):
 
     def get_open_orders(self):
         oorders = self.submit_private_request('OpenOrders', {'trades': 'True'})
-        if 'result' in oorders:
-            return oorders['result']
+        orders = []
+        if 'result' in oorders and 'open' in oorders['result']:
+            rawos = oorders['result']['open']
+            for id, o in rawos.iteritems():
+                side = 'ask' if o['descr']['type'] == 'sell' else 'bid'
+                amount = Money(o['vol']) - Money(o['vol_exec'])
+                orders.append(Order(Money(o['descr']['price'], self.fiatcurrency), amount, side, self.name, str(id)))
+        return orders
 
     def get_trades_hstory(self):
         return self.submit_private_request('TradesHistory', {'trades': 'True'})

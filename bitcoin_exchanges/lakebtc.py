@@ -8,7 +8,7 @@ from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
 import time
 
-from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS
+from exchange_util import ExchangeABC, create_ticker, ExchangeError, exchange_config, BLOCK_ORDERS, Order
 
 
 BASE_URL = 'https://www.lakebtc.com/api_v1/'
@@ -102,14 +102,20 @@ class Lakebtc(ExchangeABC):
         orders = self.get_open_orders()
         unavailable = MultiMoney()
         for o in orders:
-            if o['category'] == 'sell':
-                unavailable += Money(o['amount'])
+            if o.side == 'ask':
+                unavailable += o.amount
             else:
-                unavailable += Money(o['amount'] * o['ppc'], o['currency'])
+                unavailable += o.price * o.amount.amount
         return unavailable
 
     def get_open_orders(self, symbol='btc_usd'):
-        return self.lakebtc_request('getOrders')
+        rawos = self.lakebtc_request('getOrders')
+        orders = []
+        for o in rawos:
+            side = 'ask' if o['category'] == 'sell' else 'bid'
+            orders.append(Order(Money(o['ppc'], self.fiatcurrency), Money(o['amount']), side,
+                          self.name, str(o['id'])))
+        return orders
 
     @classmethod
     def get_order_book(cls, pair='btc_cny', **kwargs):
