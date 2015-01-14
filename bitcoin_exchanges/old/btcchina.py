@@ -114,7 +114,8 @@ class BTCChina():
 
     def get_market_depth(self, post_data=None):
         try:
-            depth = requests.get('https://data.btcchina.com/data/orderbook')
+            depth = requests.get('https://data.btcchina.com/data/orderbook',
+                                 timeout=REQ_TIMEOUT)
             return depth.json()
         except (ConnectionError, Timeout, ValueError) as e:
             raise ExchangeError('btcchina', 'Could not get_market_depth using data %s for reason %s' % (post_data, e))
