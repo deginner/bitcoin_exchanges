@@ -133,10 +133,8 @@ class Kraken(ExchangeABC):
         if BLOCK_ORDERS:
             return "order blocked"
         otype = 'buy' if otype == 'bid' else 'sell'
-        if not isinstance(amount, str):
-            amount = str(amount)
-        if not isinstance(price, str):
-            price = str(price)
+        amount = "{:0.3f}".format(float(amount))
+        price = "{:0.3f}".format(float(price))
         options = {'type': otype, 'volume': amount, 'price': price, 'pair': pair, 'ordertype': 'limit'}
         options.update(kwargs)
         resp = self.submit_private_request('AddOrder', options)
