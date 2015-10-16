@@ -51,12 +51,13 @@ class TestAPI(unittest.TestCase):
             print "test_create_order %s" % name
             ticker = mod.exchange.get_ticker()
             bid_price = float(ticker.last.amount) / 2
-            if bid_price * 0.02 < 5.5:  # minimum order size is $5 on bitstamp, which is the highest min size
-                bid_price = 5.5 / 0.02
+            bid_size = 0.02
+            if bid_price * bid_size < 5.5:  # minimum order size is $5 on bitstamp, which is the highest min size
+                bid_size = 5.5 * bid_price
             ask_price = float(ticker.last.amount) * 2
             bal = mod.exchange.get_balance(btype='available')
-            if bal.getMoneys(mod.exchange.fiatcurrency) > Money(bid_price * 0.021, currency=mod.exchange.fiatcurrency):
-                oid = mod.exchange.create_order(amount=0.02, price=bid_price, otype='bid')
+            if bal.getMoneys(mod.exchange.fiatcurrency) > Money(bid_price * bid_size, currency=mod.exchange.fiatcurrency):
+                oid = mod.exchange.create_order(amount=bid_size, price=bid_price, otype='bid')
                 self.assertIsInstance(oid, str)
             else:
                 print "insufficient balance to test create bid order for %s" % name
