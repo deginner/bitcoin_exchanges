@@ -53,7 +53,7 @@ class TestAPI(unittest.TestCase):
             bid_price = float(ticker.last.amount) / 2
             bid_size = 0.02
             if bid_price * bid_size < 5.5:  # minimum order size is $5 on bitstamp, which is the highest min size
-                bid_size = 5.5 * bid_price
+                bid_size = 5.5 / bid_price
             ask_price = float(ticker.last.amount) * 2
             bal = mod.exchange.get_balance(btype='available')
             if bal.getMoneys(mod.exchange.fiatcurrency) > Money(bid_price * bid_size, currency=mod.exchange.fiatcurrency):
