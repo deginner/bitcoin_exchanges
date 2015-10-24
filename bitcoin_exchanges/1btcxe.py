@@ -7,8 +7,8 @@ import requests
 import urllib
 from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
-from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB, \
-    BLOCK_ORDERS, MyOrder
+from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, BLOCK_ORDERS, MyOrder #nonceDB, \
+    
 
 
 url = 'https://1btcxe.com/api/'
@@ -96,7 +96,7 @@ class OneBTCXE(ExchangeABC):
             order_id     Order id        numerical
         """
         params = {"method": "CancelOrder", 'order_id': order_id}
-        resp = self._handle_response(self.send_btce(params))
+        resp = self._handle_response(self.send_request(params))
         if 'order_id' in resp:
             return True
         else:
@@ -132,15 +132,15 @@ class OneBTCXE(ExchangeABC):
         elif otype == 'ask':
             otype = 'sell'
         else:
-            raise ExchangeError(exchange='btce',
+            raise ExchangeError(exchange='1btcxe',
                                 message="Unknown order type %r" % otype)
         params = {"method": "Trade", 'pair': 'btc_usd', 'type': otype,
                   'rate': float(price),
                   'amount': round(float(amount), 2)}
-        resp = self._handle_response(self.send_btce(params))
+        resp = self._handle_response(self.send_request(params))
         if 'order_id' in resp:
             return str(resp['order_id'])
-        raise ExchangeError('btce', 'unable to create %s %r at %r order' % (otype, amount, price))
+        raise ExchangeError('1btcxe', 'unable to create %s %r at %r order' % (otype, amount, price))
 
     def get_balance(self, btype='total'):
         bals = self.send_request(path='balances-and-info')
@@ -193,12 +193,12 @@ class OneBTCXE(ExchangeABC):
         number of open orders and the server time.
         """
         params = {"method": "getInfo"}
-        return self._handle_response(self.send_btce(params))
+        return self._handle_response(self.send_request(params))
 
     def get_open_orders(self):
         params = {"method": "ActiveOrders"}
         try:
-            rawos = self._handle_response(self.send_btce(params))
+            rawos = self._handle_response(self.send_request(params))
         except ExchangeError as e:
             if e.message == 'no orders':
                 return []
@@ -222,31 +222,31 @@ class OneBTCXE(ExchangeABC):
         params = {"method": "TradeHistory"}
         if since is not None:
             params['since'] = since
-        return self._handle_response(self.send_btce(params))
+        return self._handle_response(self.send_request(params))
 
     def get_transactions(self, **kwargs):
         """Return the transactions history.
         :param **kwargs:
         """
         params = {"method": "TransHistory", 'count': 999999999999999}
-        return self._handle_response(self.send_btce(params))
+        return self._handle_response(self.send_request(params))
 
     def order_list(self):  # XXX btc-e mentions this has been deprecated.
         """
         It returns your open orders/the orders history.
         """
         params = {"method": "OrderList", 'count': 999999999999999}
-        return self._handle_response(self.send_btce(params))
+        return self._handle_response(self.send_request(params))
 
     def trade_history(self):
         """
         It returns the transactions history.
         """
         params = {"method": "TradeHistory", 'count': 999999999999999}
-        return self._handle_response(self.send_btce(params))
+        return self._handle_response(self.send_request(params))
 
     def get_deposit_address(self):
-        return exchange_config['btce']['address']
+        return exchange_config['1btcxe']['address']
 
 
 eclass = OneBTCXE
