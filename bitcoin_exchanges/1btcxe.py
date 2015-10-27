@@ -19,9 +19,9 @@ class OneBTCXE(ExchangeABC):
     name = '1btcxe'
     fiatcurrency = 'USD'
 
-    def __init__(self, uid, key, secret):
+    def __init__(self, key, secret):
         super(OneBTCXE, self).__init__()
-        self.uid = uid
+        # self.uid = uid
         self.key = key
         self.secret = secret
 
@@ -44,7 +44,7 @@ class OneBTCXE(ExchangeABC):
         # post_string = urllib.urlencode(params)
 
         # Hash the params string to produce the Sign header value
-        message = bytes(str(params['nonce']) + str(self.uid) + self.key).encode('utf-8')
+        message = bytes(str(params['nonce']) + self.key).encode('utf-8')
         print message
         secret = bytes(self.secret).encode('utf-8')
 
@@ -251,7 +251,10 @@ class OneBTCXE(ExchangeABC):
 
 eclass = OneBTCXE
 #
-exchange = OneBTCXE(uid=71548567, key=exchange_config['1btcxe']['api_creds']['key'], secret=exchange_config['1btcxe']['api_creds']['secret'])
+exchange = OneBTCXE(exchange_config['1btcxe']['api_creds']['key'], 
+                    exchange_config['1btcxe']['api_creds']['secret'])
 print exchange.get_balance()
 # book = eclass.get_order_book()
 # print book['order-book']['ask']
+
+# uid=71548567,
