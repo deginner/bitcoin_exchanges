@@ -132,7 +132,7 @@ class Bitstamp(ExchangeABC):
                 raise ExchangeError(exchange='bitstamp',
                                     message="Bitstamp balance information unavailable")
         except ValueError as e:
-            raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_open_orders' % (type(e), str(e)))
+            raise ExchangeError('bitstamp', '%s %s while sending to bitstamp get_balance' % (type(e), str(e)))
 
         if btype == 'total':
             total = MultiMoney(Money(stampbal['btc_balance']), Money(stampbal['usd_balance'], currency='USD'))
@@ -174,7 +174,7 @@ class Bitstamp(ExchangeABC):
         try:
             rawtick = json.loads(cls.api_get('ticker'))
         except (ConnectionError, Timeout, ValueError) as e:
-            raise ExchangeError('bitfinex', '%s %s while sending get_ticker to bitfinex' % (type(e), str(e)))
+            raise ExchangeError('bitstamp', '%s %s while sending get_ticker to bitstamp' % (type(e), str(e)))
 
         return create_ticker(bid=rawtick['bid'], ask=rawtick['ask'], high=rawtick['high'], low=rawtick['low'],
                              volume=rawtick['volume'], last=rawtick['last'], timestamp=rawtick['timestamp'],
