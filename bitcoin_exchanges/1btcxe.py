@@ -95,8 +95,9 @@ class OneBTCXE(ExchangeABC):
             parameter    description     it takes up the values
             order_id     Order id        numerical
         """
-        params = {"method": "CancelOrder", 'order_id': order_id}
-        resp = self._handle_response(self.send_request(params))
+        path = 'orders/cancel'
+        params = 'order_id' # not sure about this, 1btcxe uses 'id' rather than 'order_id'
+        resp = self._handle_response(self.send_request(path, params))
         if 'order_id' in resp:
             return True
         else:
@@ -134,16 +135,20 @@ class OneBTCXE(ExchangeABC):
         else:
             raise ExchangeError(exchange='1btcxe',
                                 message="Unknown order type %r" % otype)
-        params = {"method": "Trade", 'pair': 'btc_usd', 'type': otype,
-                  'rate': float(price),
-                  'amount': round(float(amount), 2)}
-        resp = self._handle_response(self.send_request(params))
+        path = 'orders/new'
+        params = {'currency': 'usd', 'side': otype,
+                  'rate': float(price), 
+                  'amount': round(float(amount), 2)} 
+        # params need to be revised
+        # per 1btcxe spec: 'amount' is amount  of BTC to buy or sell.
+        # limit_price, stop_price are specified in docs, 'rate' is not
+        resp = self._handle_response(self.send_request(path, params))
         if 'order_id' in resp:
             return str(resp['order_id'])
         raise ExchangeError('1btcxe', 'unable to create %s %r at %r order' % (otype, amount, price))
 
     def get_balance(self, btype='total'):
-        bals = self.send_request(path='balances-and-info')
+        bals = self.send_request('balances-and-info')
         print bals
         return bals
         # available = self.get_total_balance()
@@ -161,6 +166,7 @@ class OneBTCXE(ExchangeABC):
         funds = info['funds']
         return (MultiMoney() + Money(amount=funds['btc']) +
                 Money(amount=funds['usd'], currency='USD'))
+        # double check this, 'funds' is not a response from 'balances-and-info' endpoint
 
     def get_balance_in_open_orders(self):
         bal = MultiMoney()
@@ -180,6 +186,7 @@ class OneBTCXE(ExchangeABC):
                     bal += Money(amount=Decimal(olist[oNum]['amount']))
         return bal
 
+
     @classmethod
     def get_order_book(cls, pair='ignored'):
         response = cls.send_public_request('order-book')
@@ -192,13 +199,13 @@ class OneBTCXE(ExchangeABC):
         the number of transactions, the
         number of open orders and the server time.
         """
-        params = {"method": "getInfo"}
-        return self._handle_response(self.send_request(params))
+        path = 'balances-and-info'
+        return self._handle_response(self.send_request(path))
 
     def get_open_orders(self):
-        params = {"method": "ActiveOrders"}
+        path = 'open-orders'
         try:
-            rawos = self._handle_response(self.send_request(params))
+            rawos = self._handle_response(self.send_request(path))
         except ExchangeError as e:
             if e.message == 'no orders':
                 return []
@@ -219,10 +226,13 @@ class OneBTCXE(ExchangeABC):
 
     def get_trades(self, since=None):
         # It returns your open orders/the orders history.
+        # What is difference between get_trades and trade_history ?
         params = {"method": "TradeHistory"}
+
         if since is not None:
             params['since'] = since
         return self._handle_response(self.send_request(params))
+        # this will fail
 
     def get_transactions(self, **kwargs):
         """Return the transactions history.
@@ -230,20 +240,30 @@ class OneBTCXE(ExchangeABC):
         """
         params = {"method": "TransHistory", 'count': 999999999999999}
         return self._handle_response(self.send_request(params))
+        # this will fail
 
-    def order_list(self):  # XXX btc-e mentions this has been deprecated.
+    def order_list(self, currency=None):  
         """
-        It returns your open orders/the orders history.
+        Get your current open orders, grouped by order side (bid or ask).
         """
-        params = {"method": "OrderList", 'count': 999999999999999}
-        return self._handle_response(self.send_request(params))
+        path = 'open-orders'
+        if currency is not None:
+            params['currency'] = currency
 
-    def trade_history(self):
+        return self._handle_response(self.send_request(path, params))
+
+    def trade_history(self, params=None):
         """
-        It returns the transactions history.
+        Get a list of your transactions, 
+        ordered by date, in descending order.
+        :param     description                           type
+        :currency   filter by currency                    str
+        :limit      the amount of transactions to return  int
+        :side       filter by 'buy' or 'sell'             str
         """
-        params = {"method": "TradeHistory", 'count': 999999999999999}
-        return self._handle_response(self.send_request(params))
+        path = 'user-transactions'
+        params = {'currency' : None, 'limit' : 999999999999999, 'side': None}
+        return self._handle_response(self.send_request(path, params))
 
     def get_deposit_address(self):
         return exchange_config['1btcxe']['address']
