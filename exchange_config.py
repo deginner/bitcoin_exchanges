@@ -1,5 +1,4 @@
 BLOCK_ORDERS = False  # If True, then orders will not be submitted to exchanges
-
 # if live == True for an exchange, it will be used, and is available using get_live_exchange_workers
 exchange_config = {
     'btcchina': {
@@ -53,6 +52,13 @@ exchange_config = {
         'best_ask': -1,  # confirmed
         'api_creds': {'partner': '', 'secret': ''},
         'address': ''  # a deposit address from your account
+    },
+
+    'bitso': {
+        'live': True,
+        'best_bid': 0,
+        'best_ask': 0,
+        'api_creds': {'key':'', 'secret':'', 'clientid': ''}
     }
 }
 
