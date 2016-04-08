@@ -53,7 +53,16 @@ exchange_config = {
         'best_ask': -1,  # confirmed
         'api_creds': {'partner': '', 'secret': ''},
         'address': ''  # a deposit address from your account
+    },
+    'poloniex': {
+        'live': True,
+        'best_bid': 0, 
+        'best_ask': -1, 
+        'api_creds': {'key': '',
+                      'secret': ''},
+        'address': ''  # a deposit address from your account
     }
+    
 }
 
 # replace with mongoDB collection for nonce tracking
