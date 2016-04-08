@@ -57,7 +57,6 @@ class Poloniex(ExchangeABC):
             side = 'ask' if o['type'] == 'sell' else 'bid'
             orders.append(MyOrder(Money(o['rate'], self.fiatcurrency), Money(o['amount']), side,
                                   self.name, str(o['orderNumber'])))
-        print orders
         return orders
     
     def create_order(self, amount, price, otype):
@@ -99,7 +98,6 @@ class Poloniex(ExchangeABC):
             resp = polo.cancel(currencyPair, orderNumber=oid)
         except ValueError as e:
             raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
-        print resp
         if resp and 'success' in resp and resp['success'] == 1:
             return True
         elif 'error' in resp and resp['error'] == 'Order could not be cancelled.':
@@ -124,7 +122,6 @@ class Poloniex(ExchangeABC):
             
     def get_deposit_address(self):
         result = polo.returnDepositAddresses()
-        print result
         return str(result['BTC'])
     # TODO: returns addresses per coin
 
