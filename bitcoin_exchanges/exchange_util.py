@@ -4,15 +4,15 @@ import abc
 import importlib
 import os
 import sys
-
 from moneyed import Money
+
 from pymongo.errors import DuplicateKeyError
 
 
 config_dir = os.path.dirname(os.environ.get('BITCOIN_EXCHANGE_CONFIG_DIR', '.'))
 if config_dir not in sys.path:
     sys.path.append(config_dir)
-from exchange_config import exchange_config, nonceDB, BLOCK_ORDERS
+from exchange_config import exchange_config, BLOCK_ORDERS, nonceDB
 
 OrderbookItem = namedtuple('OrderbookItem', 'price amount')
 MyOrder = namedtuple('Order', ['price', 'amount', 'side', 'exchange', 'order_id'])
@@ -26,14 +26,13 @@ class ExchangeABC:
     """
     __metaclass__ = abc.ABCMeta
     name = 'Exchange'
-    fiatcurrency = 'USD'
     nonceDB = None
 
     def __init__(self):
         pass
 
     @abc.abstractmethod
-    def cancel_order(self, oid):
+    def cancel_order(self, oid, pair=None):
         """Cancel a specific order.
         :return: True if order was already or now canceled, otherwise False
         :rtype: bool
@@ -41,7 +40,7 @@ class ExchangeABC:
         pass
 
     @abc.abstractmethod
-    def cancel_orders(self, otype=None):
+    def cancel_orders(self, otype=None, pair=None):
         """Cancel all orders, or optionally just those of a given type.
         :return: True if orders were successfully canceled or no orders exist, otherwise False
         :rtype: bool
@@ -49,14 +48,33 @@ class ExchangeABC:
         pass
 
     @abc.abstractmethod
-    def create_order(self, amount, price, otype):
+    def create_order(self, amount, price, otype, pair=None):
         """
-        Create a new order of a given size, at a certain price and a specific type.
+        Create a new order of a given pair for a given size, at a certain price and 
+        a specific type.
         :return: The unique order id given by the exchange
         :rtype: str
         """
         pass
-
+    
+    @classmethod
+    def format_pair(cls, pair):
+        """
+        The default pair symbol is an uppercase string consisting of the base currency 
+        on the left and the quote currency on the right, separated by an underscore.
+        
+        If the data provided by the exchange does not match the default
+        implementation, then this method must be re-implemented.
+        """
+        pass
+    @classmethod
+    def unformat_pair(cls, pair):
+        """
+        Reverse format a pair to the format recognized by the exchange.
+        If the data provided by the exchange does not match the default
+        implementation, then this method must be re-implemented.        
+        """
+        pass
     @classmethod
     def format_book_item(cls, item):
         """
@@ -79,7 +97,6 @@ class ExchangeABC:
         # expects each order to be a list with first element as price and second as size
         return [str(item[0]), str(item[1])]
 
-
     @abc.abstractmethod
     def get_balance(self, btype='total'):
         """
@@ -90,8 +107,12 @@ class ExchangeABC:
         pass
 
     @abc.abstractmethod
-    def get_open_orders(self):
+    def get_open_orders(self, pair=None):
         """
+        :param pair : Some exchanges return all open orders in one call, while 
+                      other exchanges require a pair to be specified. If an exchange 
+                      does not require a pair param, then the "pair" param is ignored.
+
         :return:  a list of open orders as Order objects.
         :rtype: list
         """
@@ -103,9 +124,10 @@ class ExchangeABC:
         """
         Get the orderbook for this exchange.
 
-        :param pair: If the exchange supports multiple pairs, then the "pair" param
-                             can be used to specify a given orderbook. In case the exchange
-                             does not support that, then the "pair" param is ignored.
+        :param pair str: If the exchange supports multiple pairs, then the "pair" param
+                     can be used to specify a given orderbook. In case the exchange
+                     does not support that, then the "pair" param is ignored.
+
         :return: a list of bids and asks
         :rtype: list
         """
@@ -119,6 +141,7 @@ class ExchangeABC:
         :param pair: If the exchange supports multiple pairs, then the "pair" param
                      can be used to specify a given orderbook. In case the exchange
                      does not support that, then the "pair" param is ignored.
+
         :return: a Ticker with at minimum bid, ask and last.
         :rtype: Ticker
         """
@@ -128,7 +151,8 @@ class ExchangeABC:
     def get_transactions(self, limit=None):
         """
         :param limit: ?
-        :return: a list of transactions, possibly only a subset of them."""
+        :return: a list of transactions, possibly only a subset of them.
+        """
         pass
 
     @abc.abstractmethod
@@ -174,12 +198,11 @@ class ExchangeError(Exception):
 
 # Convenience Function to create tuples
 def create_ticker(bid=0, ask=0, high=0, low=0, volume=0, last=0, timestamp=0,
-                  currency='USD'):
+                  currency='USD', vcurrency='BTC'):
     return Ticker(Money(bid, currency), Money(ask, currency),
                   Money(high, currency), Money(low, currency),
-                  Money(volume, 'BTC'), Money(last, currency),
+                  Money(volume, vcurrency), Money(last, currency),
                   timestamp)
-
 
 def get_live_exchange_workers():
     exchanges = {}
@@ -187,3 +210,10 @@ def get_live_exchange_workers():
         if exch != 'UFX' and exchange_config[exch]['live']:
             exchanges[exch] = importlib.import_module('bitcoin_exchanges.%s' % exch)
     return exchanges
+
+def get_live_exchange_pairs():
+    exchange_pairs = {}
+    for exch in exchange_config:
+        if exch != 'UFX' and exchange_config[exch]['live']:
+            exchange_pairs[exch] = exchange_config[exch]['live_pairs']
+    return exchange_pairs
