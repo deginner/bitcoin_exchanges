@@ -1,7 +1,7 @@
 import time
 import json
 from moneyed.classes import Money, MultiMoney
-from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, MyOrder
+from exchange_util import exchange_config, ExchangeABC, ExchangeError, create_ticker, BLOCK_ORDERS, MyOrder, get_live_exchange_pairs
 
 from old import poloniex
 
@@ -10,57 +10,119 @@ polo = poloniex.poloniex(APIKey=exchange_config['poloniex']['api_creds']['key'],
 
 REQ_TIMEOUT = poloniex.REQ_TIMEOUT
 
-currencyPair='USDT_BTC'
-
 class Poloniex(ExchangeABC):
     name = 'poloniex'
-    fiatcurrency = 'USD'
 
     def __init__(self):
         super(Poloniex, self).__init__()
 
     @classmethod
-    def get_ticker(cls, **kwargs):
-        rawticker = polo.returnTicker()
-        usdtick = rawticker['USDT_BTC']
-        return create_ticker(bid=usdtick['highestBid'], ask=usdtick['lowestAsk'],
-                             high=usdtick['high24hr'], low=usdtick['low24hr'],
-                             last=usdtick['last'], volume=usdtick['baseVolume'],
-                             timestamp=time.time(), currency='USD')
+    def format_pair(cls, pair):
+        """
+        poloniex confuses base and quote currency
+
+        formatted : unformatted
+        'BTC_USDT': 'USDT_BTC',
+        'DASH_BTC': 'BTC_DASH',
+        'DASH_USDT': 'USDT_DASH'
+        """
+        if pair[0] == 'U':
+            quote = 'USDT'
+            if pair[5:] == 'BTC':
+                base = 'BTC'
+            elif pair[5:] == 'DASH':
+                base = 'DASH'
+        elif pair[0] == 'B':
+                quote = 'BTC'
+                base = 'DASH'
+        return base + '_' + quote
 
     @classmethod
-    def get_order_book(cls, pair=None):
-        pair = currencyPair
-        return polo.returnOrderBook(currencyPair=pair)
+    def unformat_pair(cls, pair):
+        if pair == 'BTC_USDT':
+            pair = 'USDT_BTC'
+        elif pair == 'DASH_BTC':
+            pair = 'BTC_DASH'
+        elif pair == 'DASH_USDT':
+            pair = 'USDT_DASH'
+
+        return pair
+
+    def base_currency(self, pair):
+        if pair[0] == 'B':
+            return 'BTC'
+        else:
+            return 'DASH'
+
+    def quote_currency(self, pair):
+        # DASH_USDT
+        if pair[5:] == 'USDT':
+            return 'USDT'
+        # DASH_BTC
+        if pair[5:] == 'BTC':
+            return 'BTC'
+        # BTC_USDT
+        elif pair[4:] == 'USDT':
+            return 'USDT'
+
+    @classmethod
+    def get_ticker(cls, pair=None):
+        rawticker = polo.returnTicker()
+        exch_pair = exchange.unformat_pair(pair)
+        ticker = rawticker[exch_pair]
+        return create_ticker(bid=ticker['highestBid'], ask=ticker['lowestAsk'],
+                             high=ticker['high24hr'], low=ticker['low24hr'],
+                             last=ticker['last'], volume=ticker['quoteVolume'],
+                             timestamp=time.time(), currency=exchange.quote_currency(pair),
+                             vcurrency=exchange.base_currency(pair))
     
+    @classmethod
+    def get_order_book(cls, pair=None):
+        exch_pair = exchange.unformat_pair(pair)
+        response = polo.returnOrderBook(currencyPair=exch_pair)
+        return response
+
     def get_balance(self, btype='total'):
         data = polo.returnCompleteBalances()
-
+        #print data
         # filter balances for btc and dash, report totals for both together
         btc_bal = data['BTC']
+        print btc_bal
         usdt_bal = data['USDT']
-        available = MultiMoney(Money(btc_bal['available'], currency='BTC'), Money(usdt_bal['available'], currency='USD'))
-        onOrders = MultiMoney(Money(btc_bal['onOrders'], currency='BTC'), Money(usdt_bal['onOrders'], currency='USD'))
+        print usdt_bal
+        dash_bal = data['DASH']
+        print dash_bal
+        available = MultiMoney(Money(btc_bal['available'], currency='BTC'),
+                               Money(usdt_bal['available'], currency='USDT'),
+                               Money(dash_bal['available'], currency='DASH'))
+        onOrders = MultiMoney(Money(btc_bal['onOrders'], currency='BTC'),
+                              Money(usdt_bal['onOrders'], currency='USDT'),
+                              Money(dash_bal['onOrders'], currency='DASH'))
         if btype == 'total':
             return available + onOrders
         elif btype == 'available':
             return available
+            print available
         return available + onOrders, available
             
-    def get_open_orders(self):        
+    def get_open_orders(self, pair=None):
+        exch_pair = exchange.unformat_pair(pair)
         try:
-            rawos = polo.returnOpenOrders(currencyPair)
+            rawos = polo.returnOpenOrders(currencyPair=exch_pair)
         except ValueError as e:
             raise ExchangeError('poloniex', '%s %s while sending to poloniex get_open_orders' % (type(e), str(e)))
         orders = []
         for o in rawos:
             side = 'ask' if o['type'] == 'sell' else 'bid'
-            orders.append(MyOrder(Money(o['rate'], self.fiatcurrency), Money(o['amount']), side,
-                                  self.name, str(o['orderNumber'])))
+            orders.append(MyOrder(Money(o['rate'], exchange.quote_currency(pair)),
+                                  Money(o['amount'], exchange.base_currency(pair)),
+                                  side, self.name, str(o['orderNumber'])))
         return orders
     
-    def create_order(self, amount, price, otype):
+    def create_order(self, amount, price, otype, pair):
         rate=price
+        exch_pair = exchange.unformat_pair(pair)
+        print exch_pair
         if BLOCK_ORDERS:
             return "order blocked"
         if otype == 'bid':
@@ -73,17 +135,17 @@ class Poloniex(ExchangeABC):
         params = {
             'rate' : price,
             'amount' : amount,
-            'currencyPair' : currencyPair
+            'currencyPair' : exch_pair
         }
         
         if otype == 'sell':
             try:
-                order = polo.sell(amount=amount, rate=rate, currencyPair=currencyPair)
+                order = polo.sell(amount=amount, rate=rate, currencyPair=exch_pair)
             except ValueError as e:
                 raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
         else:
             try:
-                order = polo.buy(amount=amount, rate=rate, currencyPair=currencyPair)
+                order = polo.buy(amount=amount, rate=rate, currencyPair=exch_pair)
             except ValueError as e:
                 raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
             
@@ -91,11 +153,14 @@ class Poloniex(ExchangeABC):
             return str(order['orderNumber'])
         raise ExchangeError('poloniex', 'unable to create order %r response was %r' % (params, order))
 
-    def cancel_order(self, oid):
-        params = {'currencyPair': currencyPair, 'orderNumber': oid}
+    def cancel_order(self, oid, pair):
+        exch_pair = exchange.unformat_pair(pair)
+        #print exch_pair
+        params = {'currencyPair': exch_pair, 'orderNumber': oid}
 
         try:
-            resp = polo.cancel(currencyPair, orderNumber=oid)
+            resp = polo.cancel(currencyPair=exch_pair, orderNumber=oid)
+            print resp
         except ValueError as e:
             raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
         if resp and 'success' in resp and resp['success'] == 1:
@@ -105,10 +170,10 @@ class Poloniex(ExchangeABC):
         else:
             return False
         
-        #get all open orders, then cancel each
-    def cancel_orders(self, **kwargs):
+    #get all open orders, then cancel each
+    def cancel_orders(self, pair):
         try:
-            olist = self.get_open_orders()
+            olist = self.get_open_orders(pair)
         except ExchangeError as ee:
             if ee.error == "no orders":
                 return True
@@ -116,7 +181,7 @@ class Poloniex(ExchangeABC):
                 raise ee
         success = True
         for o in olist:
-            if not self.cancel_order(o.order_id):
+            if not self.cancel_order(o.order_id, pair):
                 success = False
         return success
             
