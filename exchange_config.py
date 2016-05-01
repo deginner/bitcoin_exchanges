@@ -36,7 +36,10 @@ exchange_config = {
         'best_bid': 0,  # confirmed
         'best_ask': 0,  # confirmed
         'live_pairs': [],
-        # supported paire: ['BTC_USD', 'BTC_EUR', 'LTC_BTC']
+        # supported pairs: [
+        # 'BTC_USD', 'BTC_EUR',
+        # 'LTC_USD', 'LTC_EUR', 'LTC_BTC',
+        # 'DASH_BTC']
         'api_creds': {'key': '', 'secret': ''},
         'address': ''  # a deposit address from your account
     },
