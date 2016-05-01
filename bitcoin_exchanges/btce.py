@@ -7,18 +7,17 @@ import requests
 import urllib
 from requests.exceptions import Timeout, ConnectionError
 from moneyed.classes import Money, MultiMoney
-from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC, create_ticker, exchange_config, nonceDB,\
-    BLOCK_ORDERS, MyOrder
+from bitcoin_exchanges.exchange_util import ExchangeError, ExchangeABC,\
+     create_ticker, exchange_config, nonceDB, BLOCK_ORDERS, MyOrder
 
 
-publicUrl = 'https://btc-e.com/api/2/btc_usd/'
+publicUrl = 'https://btc-e.com/api/2/'
 tradeUrl = 'https://btc-e.com/tapi/'
 REQ_TIMEOUT = 10  # seconds
 
 
 class BTCE(ExchangeABC):
     name = 'btce'
-    fiatcurrency = 'USD'
 
     def __init__(self, key, secret):
         super(BTCE, self).__init__()
@@ -34,6 +33,50 @@ class BTCE(ExchangeABC):
         # 2150, unless btc-e changes its API before that :)
         self.key = key
         self.secret = secret
+    @classmethod
+    def format_pair(cls, pair):
+        """
+        convert unformatted pair symbol, e.g. btc_usd, 
+        to formatted (standard) pair symbol, e.g. BTC_USD.
+
+        formatted : unformatted
+        'BTC_USD' : 'btc_usd'
+        'BTC_EUR' : 'btc_eur'
+        'LTC_BTC' : 'ltc_btc
+        'DASH_BTC' : 'dsh_btc'
+        'ETH_BTC   : 'eth_btc'
+        """
+        fpair = pair.upper()
+        return fpair
+
+    @classmethod
+    def unformat_pair(cls, pair):
+        """
+        convert formatted (standard) pair symbol, e.g. BTC_USD., 
+        to unformatted pair symbol, e.g. btc_usd.
+        """
+        if pair[0] == 'D':
+            base = 'dsh'
+            quote = pair[5:].lower()
+            exch_pair = base + '_' + quote
+        else:
+            exch_pair = pair.lower()
+
+        return exch_pair
+
+    def base_currency(self, pair):
+        if pair[0] == 'D':
+            bcurr = pair[:4]
+        else:
+            bcurr = pair[:3]
+        return bcurr
+
+    def quote_currency(self, pair):
+        if pair[0] == 'D':
+            qcurr = pair[5:]
+        else:
+            qcurr = pair[4:]
+        return qcurr
 
     def send_btce(self, params=None, sign=True, retry=0):
         """
@@ -67,11 +110,11 @@ class BTCE(ExchangeABC):
         return response
 
     @classmethod
-    def papi(cls, method):
+    def papi(cls, pair, method):
         """
         BTC-E public api interface
         """
-        url = publicUrl + method + '/'
+        url = publicUrl + pair + '/' + method + '/'
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         try:
             response = requests.get(url, headers=headers, timeout=REQ_TIMEOUT)
@@ -93,7 +136,7 @@ class BTCE(ExchangeABC):
             raise ExchangeError(exchange='btce',
                                 message="response not successful but also not erroneous... %s" % str(response))
 
-    def cancel_order(self, order_id):
+    def cancel_order(self, order_id, pair=None):
         """
         Cancellation of the order
             parameter    description     it takes up the values
@@ -106,7 +149,7 @@ class BTCE(ExchangeABC):
         else:
             return False
 
-    def cancel_orders(self, **kwargs):
+    def cancel_orders(self, pair=None, **kwargs):
         try:
             olist = self.order_list()
         except ExchangeError as ee:
@@ -120,7 +163,7 @@ class BTCE(ExchangeABC):
                 success = False
         return success
 
-    def create_order(self, amount, price, otype='buy'):
+    def create_order(self, amount, price, otype, pair):
         """
         It returns the transactions history.
             parameter     description                                   it takes up the values
@@ -129,6 +172,7 @@ class BTCE(ExchangeABC):
             rate          The rate to buy/sell                          numerical
             amount        The amount which is necessary to buy/sell     numerical
         """
+        exch_pair = exchange.unformat_pair(pair)
         if BLOCK_ORDERS:
             return "order blocked"
         if otype == 'bid':
@@ -138,9 +182,12 @@ class BTCE(ExchangeABC):
         else:
             raise ExchangeError(exchange='btce',
                                 message="Unknown order type %r" % otype)
-        params = {"method": "Trade", 'pair': 'btc_usd', 'type': otype,
+        params = {"method": "Trade",
+                  'pair': exch_pair,
+                  'type': otype,
                   'rate': float(price),
-                  'amount': round(float(amount), 2)}
+                  'amount': round(float(amount), 2)
+        }
         resp = self._handle_response(self.send_btce(params))
         if 'order_id' in resp:
             return str(resp['order_id'])
@@ -182,8 +229,9 @@ class BTCE(ExchangeABC):
         return bal
 
     @classmethod
-    def get_order_book(cls, pair='ignored'):
-        response = cls.papi('depth')
+    def get_order_book(cls, pair):
+        exch_pair = exchange.unformat_pair(pair)
+        response = cls.papi(exch_pair, 'depth')
         return json.loads(response)
 
     def get_info(self):
@@ -196,7 +244,8 @@ class BTCE(ExchangeABC):
         params = {"method": "getInfo"}
         return self._handle_response(self.send_btce(params))
 
-    def get_open_orders(self):
+    def get_open_orders(self, pair):
+        exch_pair = exchange.unformat_pair(pair)
         params = {"method": "ActiveOrders"}
         try:
             rawos = self._handle_response(self.send_btce(params))
@@ -205,21 +254,31 @@ class BTCE(ExchangeABC):
                 return []
         orders = []
         for order_id, o in rawos.iteritems():
-            side = 'ask' if o['type'] == 'sell' else 'bid'
-            orders.append(MyOrder(Money(o['rate'], self.fiatcurrency), Money(o['amount']), side, self.name,
+            # filter order list for the given pair
+            if o['pair'] == exch_pair:
+                side = 'ask' if o['type'] == 'sell' else 'bid'
+                orders.append(MyOrder(Money(o['rate'], exchange.quote_currency(pair)), Money(o['amount'], exchange.base_currency(pair)), side, self.name,
                                 str(order_id)))
+            else:
+                pass
+
         return orders
 
     @classmethod
-    def get_ticker(cls, pair='ignored'):
-        response = cls.papi('ticker')
+    def get_ticker(cls, pair):
+        exch_pair = exchange.unformat_pair(pair)
+        response = cls.papi(exch_pair, 'ticker')
         ticker = json.loads(response)['ticker']
         ask = ticker.pop('buy')
         bid = ticker.pop('sell')
         timestamp = int(ticker.pop('updated'))
         volume = ticker.pop('vol_cur')
         del ticker['vol'], ticker['avg'], ticker['server_time']
-        return create_ticker(ask=ask, bid=bid, timestamp=timestamp, volume=volume, **ticker)
+        return create_ticker(ask=ask, bid=bid, timestamp=timestamp,
+                             volume=volume, 
+                             currency=exchange.quote_currency(pair),
+                             vcurrency=exchange.base_currency(pair),
+                             **ticker)
 
     def get_trades(self, since=None):
         # It returns your open orders/the orders history.
