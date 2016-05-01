@@ -39,36 +39,23 @@ class Poloniex(ExchangeABC):
 
     @classmethod
     def unformat_pair(cls, pair):
-        if pair == 'BTC_USDT':
-            pair = 'USDT_BTC'
-        elif pair == 'DASH_BTC':
-            pair = 'BTC_DASH'
-        elif pair == 'DASH_USDT':
-            pair = 'USDT_DASH'
+        return cls.reverse_pair(pair)
 
-        return pair
+    @classmethod
+    def reverse_pair(cls, pair):
+        pa = pair.split("_")
+        return ("%s_%s" % (pa[1], pa[0])).upper()
 
     def base_currency(self, pair):
-        if pair[0] == 'B':
-            return 'BTC'
-        else:
-            return 'DASH'
+        return pair.split("_")[0]
 
     def quote_currency(self, pair):
-        # DASH_USDT
-        if pair[5:] == 'USDT':
-            return 'USDT'
-        # DASH_BTC
-        if pair[5:] == 'BTC':
-            return 'BTC'
-        # BTC_USDT
-        elif pair[4:] == 'USDT':
-            return 'USDT'
+        return pair.split("_")[1]
 
     @classmethod
     def get_ticker(cls, pair=None):
         rawticker = polo.returnTicker()
-        exch_pair = exchange.unformat_pair(pair)
+        exch_pair = exchange.unformat_pair(pair.upper())
         ticker = rawticker[exch_pair]
         return create_ticker(bid=ticker['highestBid'], ask=ticker['lowestAsk'],
                              high=ticker['high24hr'], low=ticker['low24hr'],
@@ -84,14 +71,10 @@ class Poloniex(ExchangeABC):
 
     def get_balance(self, btype='total'):
         data = polo.returnCompleteBalances()
-        #print data
         # filter balances for btc and dash, report totals for both together
         btc_bal = data['BTC']
-        print btc_bal
         usdt_bal = data['USDT']
-        print usdt_bal
         dash_bal = data['DASH']
-        print dash_bal
         available = MultiMoney(Money(btc_bal['available'], currency='BTC'),
                                Money(usdt_bal['available'], currency='USDT'),
                                Money(dash_bal['available'], currency='DASH'))
@@ -102,7 +85,6 @@ class Poloniex(ExchangeABC):
             return available + onOrders
         elif btype == 'available':
             return available
-            print available
         return available + onOrders, available
             
     def get_open_orders(self, pair=None):
@@ -110,7 +92,8 @@ class Poloniex(ExchangeABC):
         try:
             rawos = polo.returnOpenOrders(currencyPair=exch_pair)
         except ValueError as e:
-            raise ExchangeError('poloniex', '%s %s while sending to poloniex get_open_orders' % (type(e), str(e)))
+            raise ExchangeError('poloniex',
+                '%s %s while sending to poloniex get_open_orders' % (type(e), str(e)))
         orders = []
         for o in rawos:
             side = 'ask' if o['type'] == 'sell' else 'bid'
@@ -122,7 +105,6 @@ class Poloniex(ExchangeABC):
     def create_order(self, amount, price, otype, pair):
         rate=price
         exch_pair = exchange.unformat_pair(pair)
-        print exch_pair
         if BLOCK_ORDERS:
             return "order blocked"
         if otype == 'bid':
@@ -142,27 +124,29 @@ class Poloniex(ExchangeABC):
             try:
                 order = polo.sell(amount=amount, rate=rate, currencyPair=exch_pair)
             except ValueError as e:
-                raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
+                raise ExchangeError('poloniex',
+                   '%s %s while sending to poloniex %r' % (type(e), str(e), params))
         else:
             try:
                 order = polo.buy(amount=amount, rate=rate, currencyPair=exch_pair)
             except ValueError as e:
-                raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
+                raise ExchangeError('poloniex',
+                    '%s %s while sending to poloniex %r' % (type(e), str(e), params))
             
         if 'orderNumber' in order and order['orderNumber']:
             return str(order['orderNumber'])
-        raise ExchangeError('poloniex', 'unable to create order %r response was %r' % (params, order))
+        raise ExchangeError('poloniex',
+            'unable to create order %r response was %r' % (params, order))
 
     def cancel_order(self, oid, pair):
         exch_pair = exchange.unformat_pair(pair)
-        #print exch_pair
         params = {'currencyPair': exch_pair, 'orderNumber': oid}
 
         try:
             resp = polo.cancel(currencyPair=exch_pair, orderNumber=oid)
-            print resp
         except ValueError as e:
-            raise ExchangeError('poloniex', '%s %s while sending to poloniex %r' % (type(e), str(e), params))
+            raise ExchangeError('poloniex',
+                '%s %s while sending to poloniex %r' % (type(e), str(e), params))
         if resp and 'success' in resp and resp['success'] == 1:
             return True
         elif 'error' in resp and resp['error'] == 'Order could not be cancelled.':

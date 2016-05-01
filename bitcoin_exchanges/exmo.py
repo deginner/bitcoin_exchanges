@@ -104,18 +104,18 @@ class Exmo(ExchangeABC):
 
     @classmethod
     def get_order_book(cls, pair, **kwargs):
-    """
-    Returns:
-    ask_quantity - the sum of all quantity values in sell orders
-    ask_amount - the sum of all total sum values in sell orders
-    ask_top - minimum sell price
-    bid_quantity - the sum of all quantity values in buy orders
-    bid_amount - the sum of all total sum values in buy orders
-    bid_top - maximum buy price
-    bid - the list of buy orders where every field is: price, quantity and amount
-    amount = price * quantity
-    ask - the list of sell orders where every field is: price, quantity and amount
-    """
+        """
+        Returns:
+        ask_quantity - the sum of all quantity values in sell orders
+        ask_amount - the sum of all total sum values in sell orders
+        ask_top - minimum sell price
+        bid_quantity - the sum of all quantity values in buy orders
+        bid_amount - the sum of all total sum values in buy orders
+        bid_top - maximum buy price
+        bid - the list of buy orders where every field is: price, quantity and amount
+        amount = price * quantity
+        ask - the list of sell orders where every field is: price, quantity and amount
+        """
         try:
             rawbook = requests.get('%s/order_book/?pair=%s' % (BASE_URL, pair),
                                 timeout=REQ_TIMEOUT).json()
@@ -129,17 +129,16 @@ class Exmo(ExchangeABC):
 
     def get_balance(self, btype='total'):
         data =self.exmo_request('user_info')
-
         available = MultiMoney()
         reserved = MultiMoney()
         for cur, amount in data['balances'].iteritems():
-            if cur == 'DOGE' or 'ETH':
+            if cur == 'DOGE' or cur == 'ETH':
                 pass
             else:
                 available += Money(amount, currency=cur)
 
         for cur, amount in data['reserved'].iteritems():
-            if cur == 'DOGE' or 'ETH':
+            if cur == 'DOGE' or cur == 'ETH':
                 pass
             else:
                 reserved += Money(amount, currency=cur)
