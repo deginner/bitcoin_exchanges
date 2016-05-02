@@ -202,7 +202,7 @@ class Exmo(ExchangeABC):
             return str(order['order_id'])
         raise ExchangeError('exmo', 'unable to create order %r response was %r' % (params, order))
 
-    def cancel_order(self, oid):
+    def cancel_order(self, oid, pair=None):
         params = {'order_id' : oid}
         try:
             resp = self.exmo_request('order_cancel', params)

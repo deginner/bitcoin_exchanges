@@ -181,6 +181,11 @@ class ExchangeABC:
             return None
         return nonce
 
+    def base_currency(self, pair):
+        return self.format_pair(pair).split("_")[0]
+
+    def quote_currency(self, pair):
+        return self.format_pair(pair).split("_")[1]
 
 class ExchangeError(Exception):
     """

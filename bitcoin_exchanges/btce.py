@@ -33,6 +33,7 @@ class BTCE(ExchangeABC):
         # 2150, unless btc-e changes its API before that :)
         self.key = key
         self.secret = secret
+
     @classmethod
     def format_pair(cls, pair):
         """
@@ -40,43 +41,21 @@ class BTCE(ExchangeABC):
         to formatted (standard) pair symbol, e.g. BTC_USD.
 
         formatted : unformatted
-        'BTC_USD' : 'btc_usd'
-        'BTC_EUR' : 'btc_eur'
-        'LTC_BTC' : 'ltc_btc
         'DASH_BTC' : 'dsh_btc'
-        'ETH_BTC   : 'eth_btc'
         """
-        fpair = pair.upper()
-        return fpair
+        if 'DSH' in pair.upper() and 'DASH' not in pair.upper():
+            pair = pair.upper().replace('DSH', 'DASH')
+        return pair.upper()
 
     @classmethod
     def unformat_pair(cls, pair):
         """
-        convert formatted (standard) pair symbol, e.g. BTC_USD., 
-        to unformatted pair symbol, e.g. btc_usd.
+        convert formatted (standard) pair symbol, e.g. DASH_USD., 
+        to unformatted pair symbol, e.g. dsh_usd.
         """
-        if pair[0] == 'D':
-            base = 'dsh'
-            quote = pair[5:].lower()
-            exch_pair = base + '_' + quote
-        else:
-            exch_pair = pair.lower()
-
-        return exch_pair
-
-    def base_currency(self, pair):
-        if pair[0] == 'D':
-            bcurr = pair[:4]
-        else:
-            bcurr = pair[:3]
-        return bcurr
-
-    def quote_currency(self, pair):
-        if pair[0] == 'D':
-            qcurr = pair[5:]
-        else:
-            qcurr = pair[4:]
-        return qcurr
+        if 'dash' in pair.lower():
+            pair = pair.lower().replace('dash', 'dsh')
+        return pair.lower()
 
     def send_btce(self, params=None, sign=True, retry=0):
         """
@@ -159,6 +138,7 @@ class BTCE(ExchangeABC):
                 raise ee
         success = True
         for order_id in olist:
+            # TODO check that order matches pair
             if not self.cancel_order(order_id=order_id):
                 success = False
         return success
@@ -182,11 +162,12 @@ class BTCE(ExchangeABC):
         else:
             raise ExchangeError(exchange='btce',
                                 message="Unknown order type %r" % otype)
+        rate = round(float(price), 3) if pair not in ['DASH_BTC', 'ETH_BTC'] else round(float(price), 5)
         params = {"method": "Trade",
                   'pair': exch_pair,
                   'type': otype,
-                  'rate': float(price),
-                  'amount': round(float(amount), 2)
+                  'rate': rate,
+                  'amount': round(float(amount), 3)
         }
         resp = self._handle_response(self.send_btce(params))
         if 'order_id' in resp:
@@ -208,7 +189,9 @@ class BTCE(ExchangeABC):
         info = self.get_info()
         funds = info['funds']
         return (MultiMoney() + Money(amount=funds['btc']) +
-                Money(amount=funds['usd'], currency='USD'))
+                Money(amount=funds['usd'], currency='USD') +
+                Money(amount=funds['eth'], currency='ETH') +
+                Money(amount=funds['dsh'], currency='DASH'))
 
     def get_balance_in_open_orders(self):
         bal = MultiMoney()
@@ -220,12 +203,13 @@ class BTCE(ExchangeABC):
             else:
                 raise ee
         for oNum in olist:
-            if olist[oNum]['pair'] == 'btc_usd':
-                if olist[oNum]['type'] == 'buy':
-                    bal += (Money(amount=olist[oNum]['amount'], currency='USD') *
-                            Money(amount=olist[oNum]['rate'], currency='USD'))
-                elif olist[oNum]['type'] == 'sell':
-                    bal += Money(amount=Decimal(olist[oNum]['amount']))
+            base = self.base_currency(olist[oNum]['pair'])
+            quote = self.quote_currency(olist[oNum]['pair'])
+            if olist[oNum]['type'] == 'buy':
+                bal += (Money(amount=olist[oNum]['amount'], currency=quote) *
+                        Money(amount=olist[oNum]['rate'], currency=quote))
+            elif olist[oNum]['type'] == 'sell':
+                bal += Money(amount=Decimal(olist[oNum]['amount']), currency=base)
         return bal
 
     @classmethod

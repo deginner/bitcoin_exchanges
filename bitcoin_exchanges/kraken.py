@@ -25,10 +25,15 @@ def adjust_pair(pair):
     :return: a pair formated according to what kraken expects.
     """
     if pair[0] != 'X':
-        half1 = pair[:3].upper()
+        half1 = pair[:3].upper().strip("_")
+        half2 = pair[3:].upper().strip("_")
         if half1 == 'BTC':
             half1 = 'XBT'
-        pair = 'X%sZ%s' % (half1, pair[3:].upper())
+        if half2 == 'BTC':
+            half2 = 'XXBT'
+        else:
+            half2 = 'Z%s' % half2
+        pair = 'X%s%s' % (half1, half2)
     return pair
 
 
@@ -89,11 +94,14 @@ class Kraken(ExchangeABC):
 
     @classmethod
     def get_ticker(cls, pair='XXBTZEUR'):
+        sp = pair.split("_")
+        base = sp[0]
+        quote = sp[1]
         pair = adjust_pair(pair)
         fullticker = cls.submit_public_request('Ticker', {'pair': pair})
         ticker = fullticker['result'][pair]
         return create_ticker(ask=ticker['a'][0], bid=ticker['b'][0], timestamp=time.time(), volume=ticker['v'][1],
-                             last=ticker['c'][0], high=ticker['h'][1], low=ticker['l'][1], currency='EUR')
+                             last=ticker['c'][0], high=ticker['h'][1], low=ticker['l'][1], currency=quote, vcurrency=base)
 
     @classmethod
     def get_ohlc(cls, pair):
@@ -120,10 +128,11 @@ class Kraken(ExchangeABC):
             return True
         return False
 
-    def cancel_orders(self, **kwargs):
+    def cancel_orders(self, pair='USD_BTC', **kwargs):
         orders = self.get_open_orders()
         success = True
         for o in orders:
+            # TODO check pair
             resp = self.cancel_order(o.order_id)
             if not resp:
                 success = False
@@ -132,6 +141,7 @@ class Kraken(ExchangeABC):
     def create_order(self, amount, price, otype, pair='XXBTZEUR', **kwargs):
         if BLOCK_ORDERS:
             return "order blocked"
+        pair = adjust_pair(pair)
         otype = 'buy' if otype == 'bid' else 'sell'
         if not isinstance(amount, str):
             amount = str(amount)
@@ -184,7 +194,7 @@ class Kraken(ExchangeABC):
     def get_total_balance(self):
         return self.submit_private_request('Balance')
 
-    def get_open_orders(self):
+    def get_open_orders(self, pair=None):
         oorders = self.submit_private_request('OpenOrders', {'trades': 'True'})
         orders = []
         if 'result' in oorders and 'open' in oorders['result']:

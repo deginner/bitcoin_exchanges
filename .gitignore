@@ -56,3 +56,5 @@ target/
 .idea
 
 exchange_config.py
+
+*~

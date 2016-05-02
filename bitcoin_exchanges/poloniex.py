@@ -19,26 +19,21 @@ class Poloniex(ExchangeABC):
     @classmethod
     def format_pair(cls, pair):
         """
-        poloniex confuses base and quote currency
+        poloniex confuses base and quote currency, and uses non-standard USD.
 
         formatted : unformatted
         'BTC_USDT': 'USDT_BTC',
         'DASH_BTC': 'BTC_DASH',
         'DASH_USDT': 'USDT_DASH'
         """
-        if pair[0] == 'U':
-            quote = 'USDT'
-            if pair[5:] == 'BTC':
-                base = 'BTC'
-            elif pair[5:] == 'DASH':
-                base = 'DASH'
-        elif pair[0] == 'B':
-                quote = 'BTC'
-                base = 'DASH'
-        return base + '_' + quote
+        if 'USDT' in pair.upper():
+            pair = pair.upper().replace('USDT', 'USD')
+        return cls.reverse_pair(pair)
 
     @classmethod
     def unformat_pair(cls, pair):
+        if 'USD' in pair.upper() and 'USDT' not in pair.upper():
+            pair = pair.upper().replace('USD', 'USDT')
         return cls.reverse_pair(pair)
 
     @classmethod
@@ -46,23 +41,18 @@ class Poloniex(ExchangeABC):
         pa = pair.split("_")
         return ("%s_%s" % (pa[1], pa[0])).upper()
 
-    def base_currency(self, pair):
-        return pair.split("_")[0]
-
-    def quote_currency(self, pair):
-        return pair.split("_")[1]
-
     @classmethod
     def get_ticker(cls, pair=None):
         rawticker = polo.returnTicker()
-        exch_pair = exchange.unformat_pair(pair.upper())
+        exch_pair = exchange.unformat_pair(pair)
         ticker = rawticker[exch_pair]
         return create_ticker(bid=ticker['highestBid'], ask=ticker['lowestAsk'],
                              high=ticker['high24hr'], low=ticker['low24hr'],
                              last=ticker['last'], volume=ticker['quoteVolume'],
-                             timestamp=time.time(), currency=exchange.quote_currency(pair),
-                             vcurrency=exchange.base_currency(pair))
-    
+                             # polo flips the pair
+                             timestamp=time.time(), currency=exchange.base_currency(pair),
+                             vcurrency=exchange.quote_currency(pair))
+
     @classmethod
     def get_order_book(cls, pair=None):
         exch_pair = exchange.unformat_pair(pair)
@@ -95,10 +85,13 @@ class Poloniex(ExchangeABC):
             raise ExchangeError('poloniex',
                 '%s %s while sending to poloniex get_open_orders' % (type(e), str(e)))
         orders = []
+        if isinstance(rawos, str):
+            raise ExchangeError('poloniex',
+                'unknown error %s while sending to poloniex get_open_orders' % rawos)
         for o in rawos:
             side = 'ask' if o['type'] == 'sell' else 'bid'
-            orders.append(MyOrder(Money(o['rate'], exchange.quote_currency(pair)),
-                                  Money(o['amount'], exchange.base_currency(pair)),
+            orders.append(MyOrder(Money(o['rate'], exchange.base_currency(pair)), # flipped
+                                  Money(o['amount'], exchange.quote_currency(pair)), # flipped
                                   side, self.name, str(o['orderNumber'])))
         return orders
     

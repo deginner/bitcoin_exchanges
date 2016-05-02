@@ -124,8 +124,8 @@ class Bitfinex(ExchangeABC):
         params = {
             'side': otype,
             'symbol': exch_pair,
-            'amount': "{:0.3f}".format(amount),
-            'price': "{:0.3f}".format(price),
+            'amount': "{:0.4f}".format(amount),
+            'price': "{:0.4f}".format(price),
             'exchange': bfxexch,
             'type': typ
         }
