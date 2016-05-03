@@ -122,7 +122,8 @@ class Kraken(ExchangeABC):
         return cls.submit_public_request('Spread', {'pair': pair})
 
     # private methods
-    def cancel_order(self, oid):
+    def cancel_order(self, oid, pair=None):
+        # TODO check pair?
         resp = self.submit_private_request('CancelOrder', {'txid': oid})
         if resp and 'result' in resp and 'count' in resp['result'] and resp['result']['count'] > 0:
             return True
@@ -169,6 +170,10 @@ class Kraken(ExchangeABC):
                     total += (Money(amount=tbal['result']['ZEUR'], currency='EUR'))
                 elif cur == 'ZUSD':
                     total += (Money(amount=tbal['result']['ZUSD'], currency='USD'))
+                elif cur == 'XETH':
+                    total += (Money(amount=tbal['result']['XETH'], currency='ETH'))
+                elif cur == 'XLTC':
+                    total += (Money(amount=tbal['result']['XLTC'], currency='LTC'))
         else:
             total = MultiMoney(Money(), Money(currency='USD'))
 
@@ -202,6 +207,7 @@ class Kraken(ExchangeABC):
             for id, o in rawos.iteritems():
                 side = 'ask' if o['descr']['type'] == 'sell' else 'bid'
                 amount = Money(o['vol']) - Money(o['vol_exec'])
+                # TODO this always uses EUR... wrong!
                 orders.append(MyOrder(Money(o['descr']['price'], self.fiatcurrency), amount, side, self.name, str(id)))
         return orders
 

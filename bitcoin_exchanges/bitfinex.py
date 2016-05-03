@@ -153,7 +153,7 @@ class Bitfinex(ExchangeABC):
             raise ExchangeError('bitfinex', '%s %s while sending to bitfinex get_balance' % (type(e), str(e)))
         if 'message' in data:
             raise ExchangeError(exchange='bitfinex', message=data['message'])
-        relevant = filter(lambda x: x['currency'] in ('usd', 'btc', 'ltc'), data)
+        relevant = filter(lambda x: x['currency'] in ('usd', 'btc', 'ltc', 'eth'), data)
 
         if btype == 'total':
             total = MultiMoney(*map(lambda x: Money(x['amount'], x['currency'].upper()), relevant))

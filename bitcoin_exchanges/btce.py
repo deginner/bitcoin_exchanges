@@ -162,7 +162,7 @@ class BTCE(ExchangeABC):
         else:
             raise ExchangeError(exchange='btce',
                                 message="Unknown order type %r" % otype)
-        rate = round(float(price), 3) if pair not in ['DASH_BTC', 'ETH_BTC'] else round(float(price), 5)
+        rate = round(float(price), 3) if pair not in ['DASH_BTC', 'ETH_BTC', 'LTC_BTC'] else round(float(price), 5)
         params = {"method": "Trade",
                   'pair': exch_pair,
                   'type': otype,
@@ -191,6 +191,7 @@ class BTCE(ExchangeABC):
         return (MultiMoney() + Money(amount=funds['btc']) +
                 Money(amount=funds['usd'], currency='USD') +
                 Money(amount=funds['eth'], currency='ETH') +
+                Money(amount=funds['ltc'], currency='LTC') +
                 Money(amount=funds['dsh'], currency='DASH'))
 
     def get_balance_in_open_orders(self):

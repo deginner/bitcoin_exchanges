@@ -132,13 +132,13 @@ class Exmo(ExchangeABC):
         available = MultiMoney()
         reserved = MultiMoney()
         for cur, amount in data['balances'].iteritems():
-            if cur == 'DOGE' or cur == 'ETH':
+            if cur == 'DOGE':
                 pass
             else:
                 available += Money(amount, currency=cur)
 
         for cur, amount in data['reserved'].iteritems():
-            if cur == 'DOGE' or cur == 'ETH':
+            if cur == 'DOGE':
                 pass
             else:
                 reserved += Money(amount, currency=cur)

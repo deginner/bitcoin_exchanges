@@ -65,12 +65,18 @@ class Poloniex(ExchangeABC):
         btc_bal = data['BTC']
         usdt_bal = data['USDT']
         dash_bal = data['DASH']
+        ltc_bal = data['LTC']
+        eth_bal = data['ETH']
         available = MultiMoney(Money(btc_bal['available'], currency='BTC'),
                                Money(usdt_bal['available'], currency='USDT'),
-                               Money(dash_bal['available'], currency='DASH'))
+                               Money(dash_bal['available'], currency='DASH'),
+                               Money(ltc_bal['available'], currency='LTC'),
+                               Money(eth_bal['available'], currency='ETH'))
         onOrders = MultiMoney(Money(btc_bal['onOrders'], currency='BTC'),
                               Money(usdt_bal['onOrders'], currency='USDT'),
-                              Money(dash_bal['onOrders'], currency='DASH'))
+                              Money(dash_bal['onOrders'], currency='DASH'),
+                              Money(ltc_bal['onOrders'], currency='LTC'),
+                              Money(eth_bal['onOrders'], currency='ETH'))
         if btype == 'total':
             return available + onOrders
         elif btype == 'available':
