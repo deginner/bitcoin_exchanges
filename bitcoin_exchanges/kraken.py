@@ -29,12 +29,18 @@ def adjust_pair(pair):
         half2 = pair[3:].upper().strip("_")
         if half1 == 'BTC':
             half1 = 'XBT'
-        if half2 == 'BTC':
+        if half2 in ['BTC', 'XBT']:
             half2 = 'XXBT'
         else:
             half2 = 'Z%s' % half2
         pair = 'X%s%s' % (half1, half2)
     return pair
+
+
+def unadjust_currency(c):
+    if c == "XBT":
+        c = "BTC"
+    return c
 
 
 class Kraken(ExchangeABC):
@@ -130,7 +136,7 @@ class Kraken(ExchangeABC):
         return False
 
     def cancel_orders(self, pair='USD_BTC', **kwargs):
-        orders = self.get_open_orders()
+        orders = self.get_open_orders(pair)
         success = True
         for o in orders:
             # TODO check pair
@@ -202,13 +208,17 @@ class Kraken(ExchangeABC):
     def get_open_orders(self, pair=None):
         oorders = self.submit_private_request('OpenOrders', {'trades': 'True'})
         orders = []
+        if pair is not None:
+            pair = adjust_pair(pair)
         if 'result' in oorders and 'open' in oorders['result']:
             rawos = oorders['result']['open']
             for id, o in rawos.iteritems():
                 side = 'ask' if o['descr']['type'] == 'sell' else 'bid'
-                amount = Money(o['vol']) - Money(o['vol_exec'])
-                # TODO this always uses EUR... wrong!
-                orders.append(MyOrder(Money(o['descr']['price'], self.fiatcurrency), amount, side, self.name, str(id)))
+                base = unadjust_currency(o['descr']['pair'][:3])
+                amount = Money(o['vol'], base) - Money(o['vol_exec'], base)
+                quote = unadjust_currency(o['descr']['pair'][3:])
+                if pair is None or adjust_pair(o['descr']['pair']) == pair:
+                    orders.append(MyOrder(Money(o['descr']['price'], quote), amount, side, self.name, str(id)))
         return orders
 
     def get_trades_hstory(self):
