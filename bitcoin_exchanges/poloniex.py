@@ -173,13 +173,15 @@ class Poloniex(ExchangeABC):
         return str(result['BTC'])
     # TODO: returns addresses per coin
 
-    def get_transactions(self, limit=None):
-        params = {'currencyPair': currencyPair}
+    #@classmethod
+    def get_transactions(self, pair, limit=None):
+        exch_pair = exchange.unformat_pair(pair)
+        params = {'currencyPair': exch_pair}
         try:
-            return polo.returnTradeHistory(params)
+            return polo.returnTradeHistory(currencyPair=exch_pair)
         except ValueError as e:
-            raise ExchangeError('poloniex', '%s %s while sending to poloniex get_transactions' % (type(e), str(e)))
-
+            raise ExchangeError('poloniex',
+                                '%s %s while sending to poloniex get_transactions' % (type(e), str(e)))
 
 
 eclass = Poloniex
