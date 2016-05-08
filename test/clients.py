@@ -195,6 +195,18 @@ class TestAPI(unittest.TestCase):
                     self.assertIn(o.side, ('bid', 'ask'))
                     self.assertIn(o.exchange, EXCHANGE)
                     self.assertIsInstance(o.order_id, str)
-                    
+
+    def test_get_transactions(self):
+        for name, mod in EXCHANGE.iteritems():
+            print "test_get_transactions %s" % name
+
+            pairs = PAIRS[name]
+            print pairs
+            for pair in pairs:
+                print pair
+                trans = mod.exchange.get_transactions(pair)
+                print trans
+                self.assertIsInstance(trans, list)
+
 if __name__ == "__main__":
     unittest.main()
